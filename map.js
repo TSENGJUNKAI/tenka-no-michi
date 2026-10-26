@@ -59,7 +59,43 @@
     ['sado','佐渡',138.38,38.05,'sado','kokujin'], ['awaji','淡路',134.85,34.4,'awaji','miyoshi'],
     ['ezo','蝦夷',140.5,42.0,'ezo','ezo']
   ];
-  const PROV = PROV_RAW.map(r => ({ id: r[0], n: r[1], lon: r[2], lat: r[3], isl: r[4], own: r[5], lbl: r[6] !== 0, xy: P(r[2], r[3]) }));
+  // 現代地名：[今日的都道府縣, 地圖上的簡稱]
+  const NOW = {
+    nagato: ['山口縣西部', '山口'], suo: ['山口縣東部', '山口'], aki: ['廣島縣西部', '廣島'], iwami: ['島根縣西部', '島根'],
+    izumo: ['島根縣東部', '島根'], hoki: ['鳥取縣西部', '鳥取'], bingo: ['廣島縣東部', '廣島'], bitchu: ['岡山縣西部', '岡山'],
+    mimasaka: ['岡山縣北部', '岡山'], bizen: ['岡山縣東南部', '岡山'], inaba: ['鳥取縣東部', '鳥取'], harima: ['兵庫縣西南部', '兵庫'],
+    tajima: ['兵庫縣北部', '兵庫'], tango: ['京都府北部', '京都'], tamba: ['京都府中部・兵庫縣東部', '京都'], settsu: ['大阪府北部・兵庫縣東南部', '大阪'],
+    izumi: ['大阪府南部', '大阪'], kawachi: ['大阪府東部', '大阪'], yamashiro: ['京都府南部（京都市）', '京都'], yamato: ['奈良縣', '奈良'],
+    kii: ['和歌山縣', '和歌山'], kumano: ['三重縣南部・和歌山縣東南部', '和歌山'], iga: ['三重縣西部（伊賀市）', '三重'], ise: ['三重縣北中部', '三重'],
+    shima: ['三重縣志摩半島', '三重'], wakasa: ['福井縣西部', '福井'], omi_s: ['滋賀縣南部', '滋賀'], omi_n: ['滋賀縣北部', '滋賀'],
+    echizen: ['福井縣東部', '福井'], kaga: ['石川縣南部', '石川'], noto: ['石川縣北部（能登半島）', '石川'], etchu: ['富山縣', '富山'],
+    hida: ['岐阜縣北部', '岐阜'], mino: ['岐阜縣南部', '岐阜'], owari: ['愛知縣西部（名古屋市）', '愛知'], mikawa: ['愛知縣東部', '愛知'],
+    totomi: ['靜岡縣西部（濱松市）', '靜岡'], suruga: ['靜岡縣中部（靜岡市）', '靜岡'], kai: ['山梨縣', '山梨'], shinano_s: ['長野縣南部', '長野'],
+    shinano_n: ['長野縣北部（長野市）', '長野'], echigo: ['新潟縣', '新潟'], echigo2: ['新潟縣北部', '新潟'], kozuke: ['群馬縣', '群馬'],
+    izu: ['靜岡縣伊豆半島', '靜岡'], sagami: ['神奈川縣', '神奈川'], musashi: ['東京都・埼玉縣', '東京'], shimotsuke: ['栃木縣', '栃木'],
+    hitachi: ['茨城縣', '茨城'], shimosa: ['千葉縣北部・茨城縣西南部', '千葉'], kazusa: ['千葉縣中部', '千葉'], awa_b: ['千葉縣南部', '千葉'],
+    mutsu_s: ['福島縣', '福島'], mutsu_c: ['宮城縣', '宮城'], mutsu_n: ['岩手縣', '岩手'], mutsu_t: ['青森縣', '青森'],
+    dewa_s: ['山形縣', '山形'], dewa_n: ['秋田縣', '秋田'], buzen: ['福岡縣東部・大分縣北部', '福岡'], chikuzen: ['福岡縣西部（福岡市）', '福岡'],
+    chikugo: ['福岡縣南部', '福岡'], bungo: ['大分縣', '大分'], hizen: ['佐賀縣・長崎縣', '佐賀'], higo: ['熊本縣', '熊本'],
+    hyuga: ['宮崎縣', '宮崎'], osumi: ['鹿兒島縣東部', '鹿兒島'], satsuma: ['鹿兒島縣西部', '鹿兒島'], sanuki: ['香川縣', '香川'],
+    awa: ['德島縣', '德島'], iyo: ['愛媛縣', '愛媛'], tosa: ['高知縣', '高知'], sado: ['新潟縣佐渡島', '佐渡'],
+    awaji: ['兵庫縣淡路島', '淡路'], ezo: ['北海道南部', '北海道']
+  };
+  // 五畿七道
+  const REGION = {
+    畿內: ['yamashiro', 'yamato', 'kawachi', 'izumi', 'settsu'],
+    東海道: ['iga', 'ise', 'shima', 'owari', 'mikawa', 'totomi', 'suruga', 'kai', 'izu', 'sagami', 'musashi', 'awa_b', 'kazusa', 'shimosa', 'hitachi'],
+    東山道: ['omi_s', 'omi_n', 'mino', 'hida', 'shinano_s', 'shinano_n', 'kozuke', 'shimotsuke', 'mutsu_s', 'mutsu_c', 'mutsu_n', 'mutsu_t', 'dewa_s', 'dewa_n'],
+    北陸道: ['wakasa', 'echizen', 'kaga', 'noto', 'etchu', 'echigo', 'echigo2', 'sado'],
+    山陰道: ['tamba', 'tango', 'tajima', 'inaba', 'hoki', 'izumo', 'iwami'],
+    山陽道: ['harima', 'mimasaka', 'bizen', 'bitchu', 'bingo', 'aki', 'suo', 'nagato'],
+    南海道: ['kii', 'kumano', 'awaji', 'awa', 'sanuki', 'iyo', 'tosa'],
+    西海道: ['chikuzen', 'chikugo', 'buzen', 'bungo', 'hizen', 'higo', 'hyuga', 'osumi', 'satsuma'],
+    蝦夷地: ['ezo']
+  };
+  const regionOf = {};
+  Object.entries(REGION).forEach(([r, ids]) => ids.forEach(i => { regionOf[i] = r; }));
+  const PROV = PROV_RAW.map(r => ({ id: r[0], n: r[1], lon: r[2], lat: r[3], isl: r[4], own: r[5], lbl: r[6] !== 0, xy: P(r[2], r[3]), now: NOW[r[0]][0], nowS: NOW[r[0]][1], region: regionOf[r[0]] }));
   const byId = Object.fromEntries(PROV.map(p => [p.id, p]));
 
   // 跨海相鄰
@@ -160,12 +196,17 @@
     html += '<g class="sites">' + SITES.map(s => { const [x, y] = P(s[1], s[2]); return castleGlyph(x, y); }).join('');
     const [kx, ky] = P(135.76, 35.01);
     html += `<g class="capital" transform="translate(${f2(kx)},${f2(ky)})"><circle r="9"/><text y="4">京</text></g></g>`;
-    html += '<g class="plabels">' + PROV.filter(p => p.lbl).map(p => `<text data-id="${p.id}" x="${f2(p.xy[0])}" y="${f2(p.xy[1] + 5)}">${p.n}</text>`).join('') + '</g>';
+    html += '<g class="plabels">' + PROV.filter(p => p.lbl).map(p => `<text class="lb-old" x="${f2(p.xy[0])}" y="${f2(p.xy[1] + 5)}">${p.n}</text><text class="lb-now" x="${f2(p.xy[0])}" y="${f2(p.xy[1] + 5)}">${p.nowS}</text>`).join('') + '</g>';
     html += '<g class="slabels">' + SEA_LABELS.filter(s => s[3]).map(s => { const [x, y] = P(s[1], s[2]); return `<text x="${f2(x)}" y="${f2(y)}" style="font-size:${s[3]}px">${s[0]}</text>`; }).join('') + '</g>';
     html += `<g class="cartouche" transform="translate(40,60)"><rect width="150" height="54" rx="2"/><rect x="5" y="5" width="140" height="44" class="in"/><text x="75" y="34">日本六十餘州圖</text></g>`;
     html += `<g class="compass" transform="translate(${W - 70},${H - 90})"><circle r="26"/><path d="M0,-34L6,0L0,6L-6,0Z"/><text y="-40">北</text></g>`;
     html += '<g class="marks"></g>';
+    if (opt.clouds) {
+      const cl = (x, y, s) => `<g class="cloud" style="--cx:${x}px;--cy:${y}px;--cs:${s};animation-delay:${-(x / 9).toFixed(1)}s"><ellipse cx="0" cy="0" rx="70" ry="16"/><ellipse cx="-30" cy="-10" rx="34" ry="16"/><ellipse cx="22" cy="-14" rx="40" ry="20"/></g>`;
+      html += `<g class="clouds">${cl(120, 300, 1.2)}${cl(520, 160, 1)}${cl(760, 620, 1.4)}${cl(300, 820, .9)}${cl(900, 420, .8)}</g>`;
+    }
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.classList.add('lbl-old');
     svg.innerHTML = html;
 
     const cells = {};
@@ -197,7 +238,7 @@
         if (w / h < ar) { const nw = h * ar; x -= (nw - w) / 2; w = nw; } else { const nh = w / ar; y -= (nh - h) / 2; h = nh; }
         const to = [x, y, w, h];
         if (anim) cancelAnimationFrame(anim);
-        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reduce = window.TFx ? !TFx.motion() : (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
         if (!animate || reduce) { vb = to; svg.setAttribute('viewBox', vb.map(f2).join(' ')); return; }
         const from = vb.slice(), t0 = performance.now();
         const step = t => {
@@ -215,6 +256,8 @@
         const x0 = Math.min(...xs) - pad, y0 = Math.min(...ys) - pad, x1 = Math.max(...xs) + pad, y1 = Math.max(...ys) + pad;
         return [x0, y0, Math.max(x1 - x0, 360), Math.max(y1 - y0, 300)];
       },
+      labelMode(mode) { svg.classList.toggle('lbl-old', mode !== 'now'); svg.classList.toggle('lbl-now', mode === 'now'); },
+      cell: id => cells[id],
       onClick(fn) {
         svg.addEventListener('click', e => { const c = e.target.closest('.cell'); if (c) fn(c.dataset.id, e); });
       }
@@ -233,5 +276,5 @@
     </svg>`;
   }
 
-  window.TMap = { W, H, P, PROV, byId, NEI, buildMap, miniMap, LANDPATH };
+  window.TMap = { W, H, P, PROV, byId, NEI, buildMap, miniMap, LANDPATH, REGION };
 })();
