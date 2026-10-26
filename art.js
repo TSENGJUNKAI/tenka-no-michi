@@ -51,7 +51,12 @@ window.TArt = (function () {
     kato: { h: 'naga' }, maeda: { h: 'naga' }, kuroda: { h: 'bowl' }, fukushima: { h: 'ichinotani' }, takenaka: { h: 'ichinotani' },
     keiji: { type: 'kabuki' }, ranmaru: { type: 'youth' }, hattori: { h: 'none', menpo: 1, armor: '#1c1c22' },
     yoshihiro: { h: 'horns', armor: '#3b2a22' }, kagekatsu: { h: 'sun' }, sakai: { h: 'moon' }, niwa: { h: 'moon' },
-    magoichi: { h: 'crow' }, yasuke: { h: 'none', skin: '#6e4a33' }, kakizaki: { h: 'horns', menpo: 1 }
+    magoichi: { h: 'crow' }, yasuke: { h: 'none', skin: '#6e4a33' }, kakizaki: { h: 'horns', menpo: 1 },
+    tsunashige: { h: 'sun', armor: '#3a3020' }, fuma: { h: 'none', menpo: 1, armor: '#1c1c22' }, ujimasa: { h: 'moon' }, kosetsusai: { type: 'tea' },
+    asahina: { h: 'horns' }, ujizane: { type: 'eboshi', makeup: 1 }, naotora: { type: 'woman', robe: '#3d5a46' }, terumoto: { h: 'smallmoon' },
+    ekei: { type: 'tea' }, murakami: { h: 'none', armor: '#2c3a4a' }, nobuchika: { h: 'horns' }, tani: { type: 'eboshi' }, hisatake: { h: 'moon' }, fukudome: { h: 'horns', menpo: 1 },
+    L_oda: { type: 'topknot', cape: '#b5361f' }, L_tokugawa: { type: 'topknot', cape: '#4f8f5a' }, L_takeda: { h: 'horns', mane: 1, armor: '#a8322a' },
+    L_uesugi: { type: 'hood' }, L_hojo: { h: 'moon', scar: 1 }, L_imagawa: { type: 'eboshi', makeup: 1 }, L_mori: { type: 'eboshi' }, L_chosokabe: { h: 'horns', armor: '#5a3a22' }
   };
   const HELMETS = ['horns', 'moon', 'sun', 'horns', 'smallmoon', 'none', 'horns'];
 
@@ -60,7 +65,7 @@ window.TArt = (function () {
     const spec = Object.assign({ type: 'armor', h: HELMETS[Math.floor(r() * HELMETS.length)] }, PT[g.id] || {});
     const old = age >= 55, mid = age >= 38;
     const id = 'pt' + g.id + (old ? 'o' : '');
-    const skin = spec.skin || ['#e6c39b', '#dcb68c', '#e9caa6'][Math.floor(r() * 3)];
+    const skin = spec.makeup ? '#f4ece0' : spec.skin || ['#e6c39b', '#dcb68c', '#e9caa6'][Math.floor(r() * 3)];
     const ink = '#1d1915', gold = '#d6ab3c';
     const armor = spec.armor || ['#2a2622', '#2f2a30', '#3a2c24'][Math.floor(r() * 3)];
     const lace = spec.armor ? '#e2b24a' : color;
@@ -81,6 +86,8 @@ window.TArt = (function () {
     }
 
     // 頭部後方
+    if (spec.mane) back += '<path d="M30,40 C8,52 6,82 12,100 L88,100 C94,82 92,52 70,40Z" fill="#f1ede4"/>';
+    if (spec.cape) back += `<path d="M4,100 C6,76 26,66 50,66 C74,66 94,76 96,100Z" fill="${spec.cape}"/>`;
     const helmeted = spec.type === 'armor' || spec.band;
     if (spec.h === 'sunburst') back += Array.from({ length: 15 }, (_, i) => { const a = (-160 + i * 10) * Math.PI / 180; return `<line x1="50" y1="38" x2="${(50 + Math.cos(a) * 44).toFixed(1)}" y2="${(38 + Math.sin(a) * 44).toFixed(1)}" stroke="${gold}" stroke-width="2.4"/>`; }).join('');
     if (spec.h === 'ichinotani') back += `<path d="M44,40 L40,4 L60,2 L58,40Z" fill="#d9d9d4" stroke="${ink}" stroke-width="1"/>`;
@@ -93,7 +100,8 @@ window.TArt = (function () {
     head += `<ellipse cx="34.5" cy="55" rx="3" ry="4.5" fill="${skin}"/><ellipse cx="65.5" cy="55" rx="3" ry="4.5" fill="${skin}"/><ellipse cx="50" cy="54" rx="14" ry="16.5" fill="${skin}"/>`;
     const brow = old ? '#d6d2c8' : ink;
     const tilt = r() > .5 ? 2 : 1;
-    head += `<path d="M40,${48 - tilt} L46,49 M60,${48 - tilt} L54,49" stroke="${brow}" stroke-width="${spec.type === 'woman' ? 1.4 : 2.2}" stroke-linecap="round"/>`;
+    head += spec.makeup ? `<ellipse cx="42" cy="43" rx="2.6" ry="1.4" fill="${ink}"/><ellipse cx="58" cy="43" rx="2.6" ry="1.4" fill="${ink}"/>` : `<path d="M40,${48 - tilt} L46,49 M60,${48 - tilt} L54,49" stroke="${brow}" stroke-width="${spec.type === 'woman' ? 1.4 : 2.2}" stroke-linecap="round"/>`;
+    if (spec.scar) head += '<path d="M55,57 L61,64 M41,50 L44,57" stroke="#8a3a2a" stroke-width="1.3"/>';
     head += spec.type === 'woman' ? `<path d="M41,53 q3,-2 6,0 M53,53 q3,-2 6,0" stroke="${ink}" stroke-width="1.4" fill="none"/><path d="M47,64 q3,1.5 6,0" stroke="#b5361f" stroke-width="1.8" fill="none"/>`
       : `<path d="M41,53 L47,53.5 M53,53.5 L59,53" stroke="${ink}" stroke-width="1.9" stroke-linecap="round"/><path d="M50,55 L49,60 L51.5,60" stroke="${ink}" stroke-width="1" fill="none" opacity=".6"/><path d="M46,64.5 L54,64.5" stroke="${ink}" stroke-width="1.2" opacity=".7"/>`;
     if (spec.type !== 'woman' && spec.type !== 'youth') {
@@ -111,6 +119,10 @@ window.TArt = (function () {
       front += `<path d="M34,46 C32,30 42,24 50,24 C58,24 68,30 66,46 C60,40 40,40 34,46Z" fill="#5b4a3a"/><path d="M34,46 L66,46" stroke="#3a2f25" stroke-width="2"/>`;
     } else if (spec.type === 'youth') {
       front += `<path d="M35,50 C33,32 44,28 50,28 C58,28 67,32 65,50 C62,42 56,40 50,41 C44,40 38,42 35,50Z" fill="${hair}"/><path d="M47,28 C46,22 54,22 53,28Z" fill="${hair}"/><path d="M50,28 L50,22" stroke="#b5361f" stroke-width="2"/>`;
+    } else if (spec.type === 'topknot') {
+      front += `<path d="M35,52 C34,42 37,37 41,36 L42,46Z M65,52 C66,42 63,37 59,36 L58,46Z" fill="${hair}"/><path d="M45,39 L55,39 L54,34 L46,34Z" fill="${hair}"/><path d="M47,34 L50,27 L53,34Z" fill="${hair}"/>`;
+    } else if (spec.type === 'hood') {
+      front += '<path d="M30,62 C28,34 38,25 50,25 C62,25 72,34 70,62 L71,76 L62,72 C65,56 62,41 50,40 C38,41 35,56 38,72 L29,76Z" fill="#f2efe8" stroke="#cfc8b8"/>';
     } else if (spec.type === 'kabuki') {
       front += `<path d="M35,48 C35,34 44,30 50,30 C56,30 65,34 65,48 C58,42 42,42 35,48Z" fill="${hair}"/><rect x="34" y="42" width="32" height="4" fill="#b5361f"/>`;
     } else if (spec.band) {
@@ -348,7 +360,7 @@ window.TArt = (function () {
   };
   const ILBL = { charge: '突擊', hold: '固守', shoot: '射擊', unk: '不明', atk: '進攻', feint: '誘敵' };
   function sign(kind, x, y, label) {
-    return `<g class="sign s-${kind}" transform="translate(${x},${y})"><circle r="14" class="sign-bg"/>${ICON[kind]}${label ? `<text y="27" class="sign-t">${ILBL[kind]}</text>` : ''}</g>`;
+    return `<g class="sign s-${kind}${label ? ' sign-enemy' : ''}" transform="translate(${x},${y})"><circle r="14" class="sign-bg"/>${ICON[kind]}${label ? `<text y="27" class="sign-t">${ILBL[kind]}</text>` : ''}</g>`;
   }
   function vsMark(adv, x, y) {
     if (!adv) return '';
@@ -370,5 +382,13 @@ window.TArt = (function () {
     return `<svg viewBox="-10 -36 24 38" class="unit-ic" aria-hidden="true">${fig(type, 0, 0, 'var(--shu)', type !== 'cav')}</svg>`;
   }
 
-  return { crest, scene, portrait, fig, block, camp, sign, vsMark, terrain, formIcon, unitIcon, icon: k => ICON[k] };
+  function weather(kind) {
+    const r = rng(11); let g = '';
+    if (kind === 'rain') { for (let i = 0; i < 70; i++) { const x = r() * 640 - 20, y = r() * 380; g += `<line x1="${x.toFixed(0)}" y1="${y.toFixed(0)}" x2="${(x - 8).toFixed(0)}" y2="${(y + 22).toFixed(0)}"/>`; } return `<g class="wx-rain">${g}</g>`; }
+    if (kind === 'mist') return '<g class="wx-mist"><rect x="-80" y="80" width="760" height="44"/><rect x="-80" y="150" width="760" height="26"/><rect x="-80" y="205" width="760" height="38"/></g>';
+    if (kind === 'snow') { for (let i = 0; i < 70; i++) g += `<circle cx="${(r() * 600).toFixed(0)}" cy="${(r() * 380).toFixed(0)}" r="${(1 + r() * 1.6).toFixed(1)}"/>`; return `<g class="wx-snow">${g}</g>`; }
+    return '';
+  }
+
+  return { crest, scene, portrait, fig, block, camp, sign, vsMark, terrain, formIcon, unitIcon, weather, icon: k => ICON[k] };
 })();
