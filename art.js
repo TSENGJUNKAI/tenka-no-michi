@@ -314,29 +314,83 @@ window.TArt = (function () {
   }
 
   // ───────── 合戰圖：小兵、本陣、意圖與軍令圖示 ─────────
-  // 小兵（原點在腳下，約 14×28）
-  function fig(type, x, y, col, flag) {
-    const t = `translate(${x.toFixed(1)},${y.toFixed(1)})`;
-    const fl = flag ? `<path d="M-1,-15 L-3,-27" class="fig-l"/><rect x="-6" y="-28" width="4" height="6" style="fill:${col}"/>` : '';
-    if (type === 'cav') return `<g transform="${t}"><g class="fig"><ellipse cx="0" cy="-6" rx="7" ry="3.4"/><path d="M5,-8 L8,-14 L10.5,-13 L7.5,-5Z M8,-14 L13,-12 L12.5,-10.5 L9,-12Z M-7,-7 q-4,2 -4,6 q2,-3 4,-4Z"/><path d="M-2,-9 L2,-9 L1.5,-16 L-1,-16Z"/><circle cx=".2" cy="-17.5" r="1.9"/></g><path d="M-5,-4 L-6.5,1 M-2,-4 L-1,1 M3,-4 L5,1 M6,-5 L8,0 M-4,-12 L11,-25" class="fig-l"/>${fl}</g>`;
-    if (type === 'gun') return `<g transform="${t}"><g class="fig"><path d="M-4.5,-13 L4.5,-13 L0,-17Z"/><rect x="-2.5" y="-13" width="5" height="7"/><path d="M-3,-6 L3,-6 L5,-1 L-3,0Z"/></g><path d="M-1,-9 L8,-20" class="fig-l" stroke-width="1.6"/><circle cx="8.5" cy="-21" r="1.2" class="fig"/>${fl}</g>`;
-    return `<g transform="${t}"><g class="fig"><path d="M-4.5,-15 L4.5,-15 L0,-19Z"/><rect x="-2.5" y="-15" width="5" height="9"/></g><path d="M-1.5,-6 L-2.5,0 M1.5,-6 L2.5,0 M2.5,-4 L4.5,-30" class="fig-l"/><path d="M3.8,-30 L4.5,-34 L5.4,-30Z" class="fig"/>${fl}</g>`;
+  // 小兵（原點在腳下；長槍兵連槍約高 60）
+  const ARM = '#3b2b24', ARM2 = '#5c4536', LEG = '#2a221d', SKIN = '#e3b98f', JIN = '#2a221d', SHAFT = '#8a5a2b', BLADE = '#d5dbe0', IRON = '#34343a';
+  const HORSES = [['#6b4a32', '#4e3423', '#2b1d14'], ['#3a2b22', '#2a1f18', '#141010'], ['#8d857a', '#6f685e', '#3d3832'], ['#9a6a3e', '#7a5230', '#3a2618']];
+  function sashi(col, x, y) {
+    return `<path d="M${x},${y} L${x - 1},${y - 21}" stroke="${SHAFT}" stroke-width=".9"/><rect x="${x - 8}" y="${y - 21}" width="7" height="12" style="fill:${col}" class="ol"/><circle cx="${x - 4.5}" cy="${y - 15}" r="2" fill="#fff8ec" opacity=".9"/>`;
   }
-  // 一整路部隊：人數越多畫越多小兵，潰走時倒在地上
-  function block(type, troops, unit, cx, cy, col, enemy, broken) {
-    if (broken) {
-      return `<g class="blk-broken">${[-24, 0, 22].map((dx, k) => `<g transform="translate(${cx + dx},${cy + 4}) rotate(${k % 2 ? 80 : -78})">${fig(type, 0, 0, col, false)}</g>`).join('')}<path d="M${cx + 40},${cy + 8} L${cx + 52},${cy - 10}" class="fig-l"/><rect x="${cx + 48}" y="${cy - 14}" width="9" height="7" style="fill:${col}" transform="rotate(30 ${cx + 52} ${cy - 10})" opacity=".7"/></g>`;
+  function fig(type, x, y, col, flag, opt = {}) {
+    const sc = opt.s || 1, flip = opt.flip ? -1 : 1, hv = HORSES[(opt.v || 0) % HORSES.length];
+    const t = `translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${(flip * sc).toFixed(3)},${sc.toFixed(3)})`;
+    const shadow = `<ellipse cx="${type === 'cav' ? 2 : 1}" cy="0" rx="${type === 'cav' ? 15 : 8}" ry="2.4" fill="rgba(0,0,0,.28)"/>`;
+    const head = (hx, hy) => `<ellipse cx="${hx}" cy="${hy}" rx="2.8" ry="3" fill="${SKIN}" class="ol"/><circle cx="${hx - .9}" cy="${hy - .2}" r=".45" fill="#1a1410"/><circle cx="${hx + 1.3}" cy="${hy - .2}" r=".45" fill="#1a1410"/><path d="M${hx - .4},${hy + 1.5} h1.2" stroke="#8a5a40" stroke-width=".4"/>`;
+    const jingasa = (hx, hy) => `<path d="M${hx - 8},${hy - .5} Q${hx},${hy - 5} ${hx + 8},${hy - .5} L${hx + 5},${hy - 4} Q${hx},${hy - 7} ${hx - 5},${hy - 4}Z" fill="${JIN}" class="ol"/><circle cx="${hx}" cy="${hy - 4}" r="1.1" style="fill:${col}"/>`;
+    if (type === 'cav') {
+      return `<g transform="${t}">${shadow}
+        <path d="M-12,-17 C-17,-15 -18,-8 -16,-3 C-14,-8 -13,-11 -11,-14Z" fill="${hv[2]}"/>
+        <path d="M-8,-12 L-10,-6 L-9,0 L-7.5,0 L-8,-6 L-6,-11Z M-5,-11 L-5.5,-5 L-3,0 L-1.5,0 L-3.5,-5 L-3,-10Z" fill="${hv[1]}"/>
+        <path d="M4,-11 L4.5,-5 L4,0 L5.5,0 L6,-5 L6,-11Z" fill="${hv[1]}"/>
+        <path d="M7,-11 L9,-5 L12,-1.5 L13.2,-2.5 L10.5,-6 L9.5,-11Z" fill="${hv[0]}"/>
+        <path d="M-12,-15 C-12,-20 -6,-21 0,-20.5 C6,-20.5 10,-20 12,-17 C12,-13 8,-10.5 2,-10.5 L-6,-10.5 C-10,-10.5 -12,-12 -12,-15Z" fill="${hv[0]}" class="ol"/>
+        <path d="M8,-19 C10,-24 12,-28 14,-30 L19,-29 L21,-26 L20,-24.5 L16,-25.5 C14,-22 13,-18 11,-15Z" fill="${hv[0]}" class="ol"/>
+        <path d="M14.5,-30 L15,-33 L16,-30Z" fill="${hv[0]}"/><circle cx="17.3" cy="-27.7" r=".55" fill="#111"/>
+        <path d="M8.5,-19.5 C10,-24 12,-27.5 14,-30 L13,-27 C11.5,-25 10.5,-22 9.5,-18Z" fill="${hv[2]}"/>
+        <path d="M-5,-20.6 L4,-20.6 L4.6,-13.5 L-5.6,-13.5Z" style="fill:${col}" class="ol"/><path d="M-5.4,-14.6 L4.4,-14.6" stroke="#f3e6c8" stroke-width=".6" stroke-dasharray="1 1"/>
+        ${flag ? sashi(col, -2, -31) : ''}
+        <path d="M0,-20 L1.6,-14.5 L3.2,-13.5" stroke="${ARM}" stroke-width="2.2" fill="none"/>
+        <path d="M-4,-22.5 L4,-22.5 L5,-18.5 L-5,-18.5Z" fill="${ARM2}" class="ol"/>
+        <path d="M-3.6,-31.5 L3.6,-31.5 L4.2,-22.5 L-4.2,-22.5Z" fill="${ARM}" class="ol"/><path d="M-3.8,-28.5 H3.9 M-4,-25.5 H4.1" style="stroke:${col}" stroke-width=".8"/>
+        <path d="M-6.2,-31.5 L-3.4,-31.5 L-3.4,-26 L-6.8,-27Z" style="fill:${col}" class="ol"/>
+        <path d="M-6.5,-14 L22,-45" stroke="${SHAFT}" stroke-width="1.2"/><path d="M22,-45 L25.8,-50.5 L23.6,-44.2Z" fill="${BLADE}" class="ol"/>
+        <path d="M3,-29.5 L8,-27 L9.5,-29.5" stroke="${ARM}" stroke-width="2" fill="none"/>
+        ${head(.5, -34)}
+        <path d="M-4.6,-34.2 L5,-34.2 L5.8,-31.6 L-5.2,-31.6Z" fill="${IRON}"/><path d="M-3.2,-34.4 C-3.2,-39.4 3.9,-39.4 3.9,-34.4Z" fill="${IRON}" class="ol"/>
+        <path d="M-1,-38.3 L-3.2,-43.5 L-1.9,-43.5 L.4,-38.8 M1.9,-38.8 L3.8,-43.5 L5,-43.5 L2.8,-38.3Z" fill="#d6ab3c"/></g>`;
     }
-    const n = Math.max(1, Math.min(15, Math.round(troops / unit)));
-    const rows = Math.ceil(n / 5);
+    if (type === 'gun') {
+      return `<g transform="${t}">${shadow}
+        ${flag ? sashi(col, -3, -23) : ''}
+        <path d="M-5,-10 L-8.5,-1 L-2,-1 L-1,-8Z" fill="${LEG}"/><path d="M0,-10 L6,-9.5 L6.2,-1 L8.6,-1 L8.6,-10.5 L2,-13Z" fill="${LEG}"/>
+        <path d="M-6,-15 L5,-15 L6,-9 L-7,-9Z" fill="${ARM2}" class="ol"/><path d="M-6.4,-12.6 L5.8,-12.6" style="stroke:${col}" stroke-width=".9"/>
+        <path d="M-5,-24 C-5.6,-21 -5.6,-18 -5,-15 L5,-15 C5.6,-18 5.6,-21 5,-24Z" fill="${ARM}" class="ol"/><path d="M-5.3,-21 H5.3 M-5.5,-18 H5.5" stroke="${ARM2}" stroke-width=".7"/>
+        <path d="M-7.6,-24 L-4.8,-24 L-4.8,-19.5 L-8.2,-20.4Z" style="fill:${col}" class="ol"/>
+        <path d="M-3,-14.5 L3.2,-19 L4.3,-17.4 L-1.9,-13Z" fill="#6b4423" class="ol"/><path d="M3.4,-18.5 L19,-28.5" stroke="#26262b" stroke-width="1.5"/><path d="M5,-19.6 L8.5,-21.8" stroke="#b0904a" stroke-width=".8"/>
+        <path d="M4,-22 L8.5,-20.6" stroke="${ARM}" stroke-width="2.2"/><path d="M-4,-22 L.5,-17 L5.5,-19" stroke="${ARM}" stroke-width="2.2" fill="none"/>
+        <path d="M2.2,-17 q-2,3 -5,2.2" stroke="#b5361f" stroke-width=".6" fill="none"/><circle cx="2" cy="-16.8" r=".9" fill="#ff7a3a"/>
+        ${head(0, -27)}${jingasa(0, -28)}</g>`;
+    }
+    return `<g transform="${t}">${shadow}
+      ${flag ? sashi(col, -3, -27) : ''}
+      <path d="M-3.5,-13 L-5,-1 L-2.5,-1 L-1,-12Z M1,-12 L3,-1 L5.5,-1 L3.5,-13Z" fill="${LEG}"/>
+      <path d="M-5.6,-1 h4 v1.2 h-4z M2.6,-1 h4 v1.2 h-4z" fill="#b39b6e"/>
+      <path d="M-6,-18 L6,-18 L7,-11 L-7,-11Z" fill="${ARM2}" class="ol"/><path d="M-6.4,-15.5 L6.4,-15.5 M-6.8,-13 L6.8,-13" style="stroke:${col}" stroke-width=".9"/>
+      <path d="M-5.5,-28 C-6,-24 -6,-21 -5.5,-18 L5.5,-18 C6,-21 6,-24 5.5,-28Z" fill="${ARM}" class="ol"/><path d="M-5.7,-25 H5.7 M-5.9,-22 H5.9" stroke="${ARM2}" stroke-width=".7"/>
+      <path d="M-8.2,-28 L-5.2,-28 L-5.2,-23 L-8.7,-24Z M8.2,-28 L5.2,-28 L5.2,-23 L8.7,-24Z" style="fill:${col}" class="ol"/>
+      <path d="M8.6,4 L8.6,-50" stroke="${SHAFT}" stroke-width="1.3"/><rect x="7.8" y="-51.2" width="1.6" height="1.8" style="fill:${col}"/><path d="M8.6,-51 L7.6,-56 L8.6,-61 L9.6,-56Z" fill="${BLADE}" class="ol"/>
+      <path d="M-5,-26 L-3,-20 L7,-19.5" stroke="${ARM}" stroke-width="2.2" fill="none"/><path d="M5,-26 L9,-22.5" stroke="${ARM}" stroke-width="2.2"/>
+      <circle cx="8.6" cy="-19.5" r="1.3" fill="${SKIN}"/><circle cx="8.8" cy="-22.5" r="1.2" fill="${SKIN}"/>
+      ${head(0, -31)}${jingasa(0, -32)}</g>`;
+  }
+  // 一整路部隊：人數越多畫越多小兵，後排小、前排大；潰走時倒在地上
+  function block(type, troops, unit, cx, cy, col, enemy, broken) {
+    const jit = k => (Math.abs(Math.sin(k * 12.9898 + cx * .7) * 43758.5453) % 1) - .5;
+    if (broken) {
+      return `<g class="blk-broken">${[-28, -4, 20].map((dx, k) => `<g transform="translate(${cx + dx},${cy + 14}) rotate(${k % 2 ? 84 : -80})">${fig(type, 0, 0, col, false, { s: .62, v: k })}</g>`).join('')}<path d="M${cx + 42},${cy + 16} L${cx + 56},${cy - 4}" stroke="${SHAFT}" stroke-width="1.4"/><rect x="${cx + 52}" y="${cy - 10}" width="12" height="9" style="fill:${col}" transform="rotate(32 ${cx + 56} ${cy - 4})" opacity=".75"/></g>`;
+    }
+    const cols = type === 'cav' ? 3 : 4, dx = type === 'cav' ? 30 : 22;
+    const n = Math.max(1, Math.min(cols * 3, Math.round(troops / unit)));
+    const rows = Math.ceil(n / cols);
     let g = '';
     for (let k = 0; k < n; k++) {
-      const r = Math.floor(k / 5), c = k % 5, inRow = r === rows - 1 ? n - 5 * (rows - 1) : 5;
-      const x = cx + (c - (inRow - 1) / 2) * 17, y = cy + (r - (rows - 1) / 2) * 19 + 10;
-      g += fig(type, x, y, col, (k + r) % 3 === 0);
+      const r = Math.floor(k / cols), c = k % cols, inRow = r === rows - 1 ? n - cols * (rows - 1) : cols;
+      const depth = rows > 1 ? r / (rows - 1) : 1;
+      const sc = .78 * (.86 + .14 * depth);
+      const x = cx + (c - (inRow - 1) / 2) * dx + jit(k) * 5 - (type === 'cav' ? 4 : 0), y = cy + (r - (rows - 1) / 2) * 18 + 16 + jit(k + 7) * 3;
+      g += fig(type, x, y, col, (k + r) % 2 === 0, { s: sc, flip: enemy, v: k + r });
     }
-    const bx = cx + 52;
-    const ban = `<g class="nobori"><path d="M${bx},${cy + 22} L${bx},${cy - 30}" class="fig-l" stroke-width="1.6"/><rect x="${bx + 1}" y="${cy - 28}" width="13" height="30" style="fill:${col}"/><text x="${bx + 7.5}" y="${cy - 9}" class="ban-t">${{ cav: '騎', spear: '槍', gun: '砲' }[type]}</text></g>`;
+    const bx = cx + 54;
+    const ban = `<g class="nobori"><path d="M${bx},${cy + 26} L${bx},${cy - 34}" stroke="${SHAFT}" stroke-width="1.8"/><path d="M${bx},${cy - 32} h15" stroke="${SHAFT}" stroke-width="1.2"/><rect x="${bx + 1}" y="${cy - 31}" width="14" height="38" style="fill:${col}" class="ol"/><circle cx="${bx + 8}" cy="${cy - 23}" r="4.2" fill="#fff8ec" opacity=".9"/><text x="${bx + 8}" y="${cy - 4}" class="ban-t">${{ cav: '騎', spear: '槍', gun: '砲' }[type]}</text></g>`;
     return `<g class="blk-in">${g}</g>${ban}`;
   }
   // 本陣：陣幕、旗幟與士氣條
@@ -379,7 +433,7 @@ window.TArt = (function () {
     return `<svg viewBox="0 0 36 24" class="form-ic" aria-hidden="true">${form === 'hoen' ? '<ellipse cx="18" cy="14" rx="15" ry="8" class="fi-l"/>' : `<path d="M${xs[0]},${(12 - pos[0] / 3).toFixed(1)} L${xs[1]},${(12 - pos[1] / 3).toFixed(1)} L${xs[2]},${(12 - pos[2] / 3).toFixed(1)}" class="fi-l"/>`}${dots}<rect x="15" y="19" width="6" height="4" class="fi-hq"/></svg>`;
   }
   function unitIcon(type) {
-    return `<svg viewBox="-10 -36 24 38" class="unit-ic" aria-hidden="true">${fig(type, 0, 0, 'var(--shu)', type !== 'cav')}</svg>`;
+    return `<svg viewBox="${type === 'cav' ? '-18 -54 46 56' : '-14 -62 30 64'}" class="unit-ic" aria-hidden="true">${fig(type, 0, 0, 'var(--shu)', false)}</svg>`;
   }
 
   function weather(kind) {

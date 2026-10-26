@@ -1144,11 +1144,11 @@
 
     // 戰場圖：上方敵軍、下方我軍，左中右三路
     const LX = [110, 300, 490], EY = 124, OY = 262;
-    const unit = Math.max(T, EP) / 30;
+    const unit = Math.max(T, EP) / 22;
     const ourCol = FAC[S.fac].color, foeCol = foeColor || '#b5361f';
     const shown = (l, mode) => mode === 'setup' ? Math.round(T * l.pct / 100) : l.troops;
-    const ourY = i => OY - FORMS[st.form].pos[i];
-    const foeY = i => EY + Math.round(FORMS[foeForm].pos[i] * .7);
+    const ourY = i => OY - Math.round(FORMS[st.form].pos[i] * .8);
+    const foeY = i => EY + Math.round(FORMS[foeForm].pos[i] * .5);
     const portraitAt = (id, x, y, s) => TArt.portrait(GEN[id], ageOf(GEN[id]), FAC[GEN[id].home] ? FAC[GEN[id].home].color : '#777').replace('<svg viewBox', `<svg x="${x}" y="${y}" width="${s}" height="${s}" viewBox`);
     const svgField = mode => {
       const pts = LX.map((x, i) => `${x},${ourY(i) + 4}`);
@@ -1160,11 +1160,11 @@
         const lb = l.broken || (mode === 'setup' && l.pct === 0);
         const fy = foeY(i);
         s += `<g class="blk foe" data-i="${i}">${TArt.block(f.type, f.troops, unit, x, fy, foeCol, true, f.broken)}<text class="bf-num" x="${x}" y="${fy + 48}">${f.broken ? '潰走' : fmt(f.troops)}</text></g>`;
-        if (mode !== 'setup' && !f.broken) s += TArt.sign(f.known ? f.shown : 'unk', x - 58, fy - 22, true);
-        if (!f.broken && !lb) s += TArt.vsMark(adv, x, (fy + oy) / 2 + 12);
+        if (mode !== 'setup' && !f.broken) s += TArt.sign(f.known ? f.shown : 'unk', x - 66, fy - 14, true);
+        if (!f.broken && !lb) s += TArt.vsMark(adv, x - 8, (fy + oy) / 2 + 2);
         s += `<g class="blk our" data-i="${i}">${TArt.block(l.type, shown(l, mode), unit, x, oy, ourCol, false, lb)}<text class="bf-num" x="${x}" y="${oy + 48}">${l.broken ? '潰走' : lb ? '' : fmt(shown(l, mode))}</text></g>`;
-        if (l.g && !lb) s += portraitAt(l.g, x - 74, oy + 4, 28);
-        if (mode !== 'setup' && !l.broken) s += TArt.sign(l.order, x - 58, oy - 20, false);
+        if (l.g && !lb) s += portraitAt(l.g, x - 82, oy + 10, 28);
+        if (mode !== 'setup' && !l.broken) s += TArt.sign(l.order, x - 66, oy - 14, false);
       });
       return s + TArt.weather(weather()) + '</svg>';
     };

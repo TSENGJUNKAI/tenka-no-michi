@@ -19,7 +19,7 @@
   --grain: .32; --shadow: 0 1px 0 rgba(0,0,0,.04), 0 10px 30px -12px rgba(40, 28, 10, .35);
   --f-brush: "LXGW WenKai TC", "Kaiti TC", "BiauKai", "DFKai-SB", "KaiTi", serif;
   --f-body: "Noto Serif TC", "Songti TC", "PMingLiU", "MingLiU", serif;
-  --r1: #8a6a45; --r2: #3d62a0; --r3: #b48a22;
+  --r1: #8a6a45; --r2: #3d62a0; --r3: #b48a22; --fig-ol: #1a1410;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -27,7 +27,7 @@
     --line: #363b48; --shu: #e05a3d; --shu-ink: #1a0f0b; --kin: #d8b45c; --ai: #0b101c; --ai2: #18213a; --ai-ink: #ece4d0;
     --sea: #17212c; --wave: #22303d; --land: #2b2a26; --ok: #79b487; --bad: #ef7a62; --veil: rgba(0, 0, 0, .66);
     --sky-top: #1b2232; --sky-bot: #2c3243; --m3: #3a3f4d; --m2: #2a2e39; --m1: #171a21; --fg1: #0d0f14; --sun: #e05a3d; --mist: #1b1e26; --rain: #8d98ad;
-    --grain: .12; --shadow: 0 10px 30px -12px rgba(0,0,0,.7); --r1: #b48c62; --r2: #7e9fd6; --r3: #e0b84e;
+    --grain: .12; --shadow: 0 10px 30px -12px rgba(0,0,0,.7); --r1: #b48c62; --r2: #7e9fd6; --r3: #e0b84e; --fig-ol: #d9c9a6;
     color-scheme: dark;
   }
 }
@@ -36,7 +36,7 @@
   --line: #363b48; --shu: #e05a3d; --shu-ink: #1a0f0b; --kin: #d8b45c; --ai: #0b101c; --ai2: #18213a; --ai-ink: #ece4d0;
   --sea: #17212c; --wave: #22303d; --land: #2b2a26; --ok: #79b487; --bad: #ef7a62; --veil: rgba(0, 0, 0, .66);
   --sky-top: #1b2232; --sky-bot: #2c3243; --m3: #3a3f4d; --m2: #2a2e39; --m1: #171a21; --fg1: #0d0f14; --sun: #e05a3d; --mist: #1b1e26; --rain: #8d98ad;
-  --grain: .12; --shadow: 0 10px 30px -12px rgba(0,0,0,.7); --r1: #b48c62; --r2: #7e9fd6; --r3: #e0b84e;
+  --grain: .12; --shadow: 0 10px 30px -12px rgba(0,0,0,.7); --r1: #b48c62; --r2: #7e9fd6; --r3: #e0b84e; --fig-ol: #d9c9a6;
   color-scheme: dark;
 }
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; }
@@ -493,6 +493,7 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .hill { fill: var(--m2); opacity: .55; }
 .bf-river { fill: var(--sea); opacity: .95; }
 .fig { fill: var(--ink); }
+.bfsvg .ol, .unit-ic .ol { stroke: var(--fig-ol); stroke-width: .6; }
 .fig-l { stroke: var(--ink); stroke-width: 1.2; fill: none; stroke-linecap: round; }
 .blk-broken { opacity: .45; }
 .ban-t { font-family: var(--f-brush); font-size: 11px; fill: #fff8ec; text-anchor: middle; }
@@ -519,7 +520,7 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .col-h { font-family: var(--f-brush); font-size: .88rem; color: var(--ink2); letter-spacing: .2em; }
 .col .ln-gen { max-width: 140px; }
 .ut { padding: 2px 5px; }
-.unit-ic { width: 20px; height: 30px; display: block; }
+.unit-ic { width: 24px; height: 32px; display: block; }
 .ord { display: grid; justify-items: center; padding: 3px 6px; font-size: .76rem; line-height: 1.15; }
 .ord-ic { width: 22px; height: 22px; }
 .ord-ic .ic { fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -669,12 +670,12 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 <div id="modal" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 
-<script src="map.js?v=6c"></script>
-<script src="data.js?v=6c"></script>
-<script src="art.js?v=6c"></script>
+<script src="map.js?v=7b"></script>
+<script src="data.js?v=7b"></script>
+<script src="art.js?v=7b"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="fx.js?v=6c"></script>
-<script src="audio.js?v=6c"></script>
-<script src="game.js?v=6c"></script>
+<script src="fx.js?v=7b"></script>
+<script src="audio.js?v=7b"></script>
+<script src="game.js?v=7b"></script>
 </body>
 </html>
