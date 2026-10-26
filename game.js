@@ -39,7 +39,7 @@
     if (y < 1573.55) return '元龜' + cnum(yi - 1569) + '年';
     return '天正' + cnum(yi - 1572) + '年';
   }
-  const RN = ['', '一', '二', '三'];
+  const RN = ['', '一', '二', '三', '四', '五'];
   const season = y => ['春', '夏', '秋', '冬'][Math.min(3, Math.floor((y - Math.floor(y)) * 4))];
   const yearLabel = y => `${era(y)}・${season(y)}`;
 
@@ -651,7 +651,7 @@
     return false;
   }
   function nodeStep(t, next) {
-    if (t === 'battle') return battleStep(makeBattle(), {}, next);
+    if (t === 'battle') return targetModal(next);
     if (t === 'boss') { const id = P().ch[S.ch].boss; return councilModal(B[id], () => battleStep(B[id], { boss: true, named: id }, next)); }
     if (t === 'event') return randomEvent(next);
     if (t === 'recruit') return recruitModal(next);
@@ -826,163 +826,358 @@
   }
 
   // ───────── 合戰 ─────────
+  // ───────── 攻略目標：地形與特產 ─────────
+  const MOUNTAIN = new Set(['kai', 'shinano_s', 'shinano_n', 'hida', 'kozuke', 'mimasaka', 'iga', 'yamato', 'kii', 'kumano', 'tosa', 'hyuga', 'mutsu_n', 'dewa_s', 'tamba', 'tajima', 'higo']);
+  const terrainOf = p => MOUNTAIN.has(p) ? 'mountain' : 'plain';
+  const PRODUCT = {
+    kai: { n: '黑川金山', d: '收入 +5', eff: { income: 5 } }, sado: { n: '佐渡金山', d: '收入 +5', eff: { income: 5 } },
+    iwami: { n: '石見銀山', d: '收入 +7', eff: { income: 7 } }, izumi: { n: '自治都市・堺', d: '收入 +6', eff: { income: 6 } },
+    settsu: { n: '大坂與兵庫津', d: '收入 +3・威望 +5', eff: { income: 3, pres: 5 } }, yamashiro: { n: '京都', d: '威望 +20', eff: { pres: 20 } },
+    omi_n: { n: '國友鐵砲鍛冶', d: '獲得種子島銃', eff: { treas: 'tanegashima' } }, kii: { n: '雜賀・根來鐵砲眾', d: '獲得種子島銃', eff: { treas: 'tanegashima' } },
+    osumi: { n: '種子島', d: '獲得種子島銃', eff: { treas: 'tanegashima' } }, iga: { n: '伊賀忍者', d: '下一戰看穿敵情', eff: { flag: 'intel' } },
+    mikawa: { n: '三河武士', d: '兵力 +800', eff: { troops: 800 } }, owari: { n: '濃尾平原的稻米', d: '收入 +3', eff: { income: 3 } },
+    mino: { n: '濃尾平原的稻米', d: '收入 +3', eff: { income: 3 } }, echigo: { n: '青苧（麻布原料）', d: '收入 +3', eff: { income: 3 } },
+    hizen: { n: '南蠻貿易港', d: '收入 +4', eff: { income: 4 } }, chikuzen: { n: '博多港', d: '收入 +4', eff: { income: 4 } },
+    musashi: { n: '關東平原', d: '兵力 +800', eff: { troops: 800 } }, suruga: { n: '駿河灣的鹽與海運', d: '收入 +3', eff: { income: 3 } },
+    ise: { n: '伊勢神宮與海路', d: '收入 +2・威望 +6', eff: { income: 2, pres: 6 } }, harima: { n: '播磨的鹽田', d: '收入 +3', eff: { income: 3 } },
+    shinano_n: { n: '善光寺', d: '威望 +6', eff: { pres: 6 } }, kozuke: { n: '上野的牧場', d: '兵力 +500', eff: { troops: 500 } },
+    mutsu_s: { n: '奧州名馬', d: '兵力 +500', eff: { troops: 500 } }, nagato: { n: '赤間關海峽', d: '收入 +3', eff: { income: 3 } },
+    omi_s: { n: '琵琶湖水運', d: '收入 +3', eff: { income: 3 } }, sagami: { n: '小田原城下', d: '收入 +3', eff: { income: 3 } }
+  };
   function frontier() {
     const mine = new Set(myProvs()), allyF = S.allies.map(a => ALLY[a].fac);
     const out = new Set();
     mine.forEach(p => TMap.NEI[p].forEach(n => { const o = S.owners[n]; if (o !== S.fac && !allyF.includes(o) && n !== 'ezo') out.add(n); }));
     return [...out];
   }
-  function makeBattle() {
-    const fr = frontier();
-    const t = fr.length ? pick(fr) : pick(TMap.PROV.filter(p => S.owners[p.id] !== S.fac && p.id !== 'ezo')).id;
-    const prov = TMap.byId[t], o = S.owners[t];
-    const ep = Math.round((S.troops * .6 + 1500 + Math.max(0, S.ch) * 2600) * (.85 + rnd() * .35) / 100) * 100;
-    return { n: `${prov.n}攻略`, place: `${prov.n}（今${prov.nowS}）`, loc: [prov.lon, prov.lat], foe: o, cmd: `${FAC[o].n}家的部將`, ft: ep, ep, scene: pick(['field', 'cavalry', 'siege', 'river', 'mist', 'field']), target: t,
+  const enemyStrength = () => Math.round((S.troops * .6 + 1500 + Math.max(0, S.ch) * 2600) * (.85 + rnd() * .35) / 100) * 100;
+  function makeBattle(t, ep) {
+    if (!t) { const fr = frontier(); t = fr.length ? pick(fr) : pick(TMap.PROV.filter(p => S.owners[p.id] !== S.fac && p.id !== 'ezo')).id; }
+    const prov = TMap.byId[t], o = S.owners[t], ter = terrainOf(t);
+    ep = ep || enemyStrength();
+    return { n: `${prov.n}攻略`, place: `${prov.n}（今${prov.nowS}）`, loc: [prov.lon, prov.lat], foe: o, cmd: `${FAC[o].n}家的部將`, ft: ep, ep, target: t, terrain: ter,
+      scene: ter === 'mountain' ? pick(['mist', 'siege', 'field']) : pick(['field', 'cavalry', 'siege', 'river']),
       intro: `你的軍隊進入了${prov.n}（今${prov.now}）。${FAC[o].n}家的軍隊已在前方布陣，旗幟在風中翻飛。`, specials: [] };
   }
+  function targetModal(next) {
+    let cands = shuffle(frontier()).slice(0, 4);
+    if (!cands.length) cands = [pick(TMap.PROV.filter(p => S.owners[p.id] !== S.fac && p.id !== 'ezo')).id];
+    const info = cands.map(t => ({ t, ep: enemyStrength() }));
+    let sel = null;
+    const draw = () => {
+      openModal(`<div class="sheet-body"><div class="kicker">合戰</div><h2>選擇攻打目標</h2>
+        <p class="story">斥候回報了邊境各國的情況。點地圖上標了數字的國，或從下方清單選擇。</p>
+        <div class="selmap"><svg id="selmap" role="img" aria-label="可以攻打的國"></svg></div>
+        <div class="choices">${info.map((c, i) => {
+          const p = TMap.byId[c.t], o = S.owners[c.t], pr = PRODUCT[c.t], ter = terrainOf(c.t);
+          return `<button class="choice target ${sel === c.t ? 'on' : ''}" data-t="${c.t}"><b>${i + 1}．${p.n}（今${esc(p.now)}）</b><small>${FAC[o].n}${o === 'kokujin' ? '' : '家'}・約 ${fmt(c.ep)} 人・${ter === 'mountain' ? '山地：騎馬不利、守方有利' : '平原：騎馬有利'}${pr && !(S.gotProd || []).includes(c.t) ? `・特產「${pr.n}」（${pr.d}）` : ''}</small></button>`;
+        }).join('')}
+          <button class="choice" data-t=""><b>按兵不動</b><small>這次不出兵（威望 -3）</small></button></div>
+        <div class="actions"><button class="btn btn-shu" id="m-ok" ${sel ? '' : 'disabled'}>${sel ? `出兵：${TMap.byId[sel].n}` : '請先選擇目標'}</button></div></div>`, { quiet: true, keepScroll: true });
+      const m = TMap.buildMap($('#selmap'), { id: 'sel' });
+      m.setOwners(S.owners, COLORS, S.fac);
+      m.highlight(sel ? [sel] : cands);
+      m.marks(info.map((c, i) => ({ lon: TMap.byId[c.t].lon, lat: TMap.byId[c.t].lat, label: `${i + 1}` })));
+      m.setView(m.boxFor(cands.concat(myProvs().filter(p => cands.some(c => TMap.NEI[c].has(p)))), 110), false);
+      m.onClick(pid => { if (cands.includes(pid)) { sel = pid; draw(); } });
+      document.querySelectorAll('#modal .choice').forEach(b => b.onclick = () => {
+        if (!b.dataset.t) { S.pres = Math.max(0, S.pres - 3); refresh(); return next(); }
+        sel = b.dataset.t; draw();
+      });
+      $('#m-ok').onclick = () => { const c = info.find(x => x.t === sel); if (c) battleStep(makeBattle(c.t, c.ep), {}, next); };
+    };
+    draw();
+  }
+
+  // ───────── 合戰：三路布陣 ─────────
+  const UT = { cav: { n: '騎馬隊', s: '騎' }, spear: { n: '長槍隊', s: '槍' }, gun: { n: '鐵砲隊', s: '砲' } };
+  const BEATS = { gun: 'cav', cav: 'spear', spear: 'gun' };
+  const LANE = ['左翼', '中央', '右翼'];
+  const FORMS = {
+    gyorin: { n: '魚鱗', d: '中央 +30%、兩翼 -10%：集中兵力從正中突破。', m: [.9, 1.3, .9], hist: '部隊像魚鱗般層層排列、中央突出，適合以少擊多。三方原之戰中，武田信玄擺的就是魚鱗之陣。' },
+    kakuyoku: { n: '鶴翼', d: '兩翼 +20%、中央 -15%：兩翼都擊潰敵軍時，可包圍敵本陣（士氣 -30）。', m: [1.2, .85, 1.2], hist: '像鶴展翅般向兩側張開，適合以多擊少、包圍敵軍。三方原之戰中，德川家康就擺出鶴翼之陣迎戰武田。' },
+    hoshi: { n: '鋒矢', d: '全軍攻擊 +15%，但我軍損失也 +15%。', m: [1.15, 1.15, 1.15], lossMul: 1.15, hist: '像箭頭一樣全力向前衝，是攻擊性最強的陣形，但側面和後方容易被攻破。' },
+    engetsu: { n: '偃月', d: '中央 +15%，大將在前鼓舞士氣：本陣士氣受損 -40%。', m: [1, 1.15, 1], hqMul: .6, hist: '大將親自站在弧形陣前端，士氣高昂但大將危險。傳說上杉謙信擅長這種陣形。' },
+    hoen: { n: '方圓', d: '我軍損失 -25%，攻擊 -15%：適合死守待援。', m: [.85, .85, .85], lossMul: .75, hist: '把大將圍在中央的圓形防禦陣，適合被包圍時固守，或等待援軍到來。' }
+  };
+  const ORD = { atk: '進攻', hold: '固守', feint: '誘敵' };
+  const INTENT = { charge: '突擊', hold: '固守', shoot: '射擊' };
+  // 軍令對敵軍意圖：[我方造成傷害倍率, 我方承受傷害倍率]
+  const MX = { atk: { charge: [1, 1], hold: [.75, 1.1], shoot: [1, 1.25] }, hold: { charge: [1.15, .65], hold: [.3, .3], shoot: [.5, .9] }, feint: { charge: [1.45, .5], hold: [.2, .35], shoot: [.2, .6] } };
+  const FPREF = { takeda: ['cav', 'cav', 'spear'], uesugi: ['cav', 'spear', 'spear'], oda: ['gun', 'spear', 'spear'], tokugawa: ['spear', 'spear', 'cav'], akechi: ['gun', 'spear', 'gun'], ikko: ['spear', 'spear', 'spear'], saito: ['spear', 'spear', 'cav'], imagawa: ['spear', 'cav', 'spear'], hojo: ['spear', 'gun', 'spear'], mori: ['spear', 'gun', 'spear'], miyoshi: ['spear', 'gun', 'cav'], azai: ['spear', 'cav', 'spear'], asakura: ['spear', 'spear', 'cav'], kokujin: ['spear', 'spear', 'cav'] };
+  const BOSS_LANES = {
+    okehazama: ['spear', 'cav', 'spear'], marune: ['spear', 'spear', 'spear'], inabayama: ['spear', 'spear', 'gun'], nagashino_oda: ['cav', 'cav', 'cav'],
+    nagashino_toku: ['cav', 'cav', 'cav'], nagashino_t: ['gun', 'gun', 'spear'], honnoji: ['gun', 'spear', 'gun'], mikawa_ikki: ['spear', 'spear', 'spear'],
+    mikatagahara_toku: ['cav', 'cav', 'spear'], mikatagahara_t: ['spear', 'gun', 'spear'], iga: ['spear', 'spear', 'spear'], kawanakajima_t: ['cav', 'spear', 'cav'],
+    kawanakajima_u: ['cav', 'spear', 'cav'], koshu: ['gun', 'spear', 'gun'], tedorigawa: ['spear', 'gun', 'spear'], uozu: ['gun', 'spear', 'gun'], anegawa: ['spear', 'cav', 'spear']
+  };
+  const RNX = ['', '一', '二', '三', '四', '五'];
+
   function battleStep(def, opt, next) {
     if (def.boss && (def === B.honnoji || def === B.iga) && S.gens.includes('akechi')) {
       S.gens = S.gens.filter(x => x !== 'akechi'); S.dead.push('akechi');
     }
-    const st = { def, opt, bt: def.local || S.troops, hp: 100, round: 1, buff: S.flags.intel ? .1 : 0, used: {}, furin: false, furinUsed: false, burst: false, log: [] };
-    st.bt0 = st.bt;
-    if (S.flags.intel) { delete S.flags.intel; st.log.push({ c: 'sys', t: '忍者帶回了敵軍的情報（成功率 +10%）。' }); }
-    S.stats.battles++;
-    if (opt.named) seen('battles', opt.named);
-    const EP = def.ep * (def.boss ? 1.25 : 1);
+    const bid = opt.named;
+    const EP = def.ep * (def.boss && S.ch >= 0 ? 1.25 : 1);
+    const T = def.local || S.troops;
+    const survive = def.mode === 'survive';
+    const maxR = survive ? 3 : 5;
     const foeColor = FAC[def.foe] ? FAC[def.foe].color : undefined;
     const placeTxt = def.place && def.loc && !def.target ? `${def.place}（今${provAt(def.loc).nowS}）` : (def.place || placeName(def.loc));
     const head = label => sceneHead(def.scene, placeTxt, label, { foe: foeColor, seed: def.n.length });
+    const types = (bid && BOSS_LANES[bid]) || shuffle(FPREF[def.foe] || FPREF.kokujin);
+    const wts = [0, 1, 2].map(() => .3 + rnd() * .15), ws = wts.reduce((a, b) => a + b, 0);
+    const foe = types.map((ty, i) => { const tr = Math.max(def.local ? 30 : 100, Math.round(EP * wts[i] / ws)); return { type: ty, troops: tr, t0: tr, broken: false, intent: 'hold', known: false }; });
+    const defType = S.fac === 'takeda' ? 'cav' : 'spear';
+    const our = [0, 1, 2].map(() => ({ g: null, type: defType, pct: 30, troops: 0, t0: 0, order: 'atk', broken: false }));
+    const gs = S.gens.slice().sort((a, b) => stat(b, 'w') - stat(a, 'w'));
+    [1, 0, 2].forEach((lane, k) => { if (gs[k]) our[lane].g = gs[k]; });
+    const st = { round: 0, form: 'gyorin', hq: { our: 100, foe: 100 }, reserve: 0, resTo: -1, resUsed: false, plan: null, used: {}, log: [], buff: 0, intel: !!S.flags.intel, fx: null };
+    if (S.flags.intel) { delete S.flags.intel; st.log.push({ c: 'sys', t: '忍者帶回了敵軍的情報：本戰可以看穿更多敵軍動向。' }); }
+    S.stats.battles++;
+    if (bid) seen('battles', bid);
+    const plotP = () => clamp(.3 + (S.gens.reduce((m, g) => Math.max(m, (stat(g, 'c') + stat(g, 'a')) / 2), 40) - 60) / 200 + bonus('plot'), .05, .9);
+    const total = () => our.reduce((a, l) => a + l.troops, 0) + st.reserve;
+
     const intro = () => {
       const pv = provAt(def.loc);
       openModal(`${head(yearLabel(S.year))}<div class="sheet-body"><div class="kicker">${def.boss ? '決戰' : '合戰'}</div><h2>${esc(def.n)}</h2>
         <div class="with-mini"><p class="story">${esc(def.intro)}</p>${def.loc ? `<div><div class="mini-map">${TMap.miniMap(def.loc[0], def.loc[1], pv.n)}</div><div class="now-line">今：${esc(pv.now)}</div></div>` : ''}</div>
-        <p class="fine">敵軍：${esc(FAC[def.foe] ? FAC[def.foe].n : '')}・${esc(def.cmd)}・約 ${fmt(def.ft)} 人${def.local ? `　我方：隨從約 ${def.local} 人` : ''}${def.mode === 'survive' ? `　<b>勝利條件：${esc(def.survive || '撐過三回合')}</b>` : '　勝利條件：三回合內擊潰敵軍士氣'}</p>
-        <div class="actions"><button class="btn btn-shu" id="m-ok">開戰</button></div></div>`);
-      $('#m-ok').focus(); $('#m-ok').onclick = draw;
+        <p class="fine">敵軍：${esc(FAC[def.foe] ? FAC[def.foe].n : '')}・${esc(def.cmd)}・約 ${fmt(def.ft)} 人${def.local ? `　我方：隨從約 ${def.local} 人` : ''}　<b>勝利條件：${survive ? esc(def.survive || '撐過三回合') : '擊潰敵軍兩路，或讓敵本陣士氣歸零'}</b></p>
+        <div class="actions"><button class="btn btn-shu" id="m-ok">布陣</button></div></div>`);
+      $('#m-ok').focus(); $('#m-ok').onclick = setup;
     };
-    const tactics = () => {
-      const nd = def.noDefault || [];
-      const ratio = (st.bt * (1 + S.gens.reduce((a, g) => a + stat(g, 'w'), 0) / 900)) / (EP * (.4 + .6 * st.hp / 100));
-      const l2 = Math.log2(Math.max(.05, ratio));
-      st.dmul = clamp(1 + .2 * l2, .8, 1.5);
-      const extra = () => st.buff + (st.furin ? .25 : 0) + (bonus('foresight') ? .05 : 0) + (bonus('lowhp') && st.bt < st.bt0 * .4 ? .2 : 0);
-      const list = [];
-      const byW = id => stat(id, 'w'), byC = id => stat(id, 'c'), byP = id => (stat(id, 'c') + stat(id, 'a')) / 2;
-      const lead = fn => bestBy(fn);
-      const by = fn => { const id = lead(fn); return id ? `・由${GEN[id].n}${fn === byW ? '率領' : '指揮'}` : ''; };
-      if (!nd.includes('strike')) list.push({ id: 'strike', n: '強攻', lead: lead(byW), d: `正面進攻${by(byW)}`, p: .4 + .2 * l2 + (best('w') - 60) / 250 + bonus('atk') + (S.fac === 'uesugi' ? .15 : 0) + ((def.penalty || {}).strike || 0), dmg: S.fac === 'takeda' ? 46 : 38, failLoss: 1.2 });
-      if (!nd.includes('amb')) list.push({ id: 'amb', n: '奇襲', lead: lead(byC), d: `繞道突襲，高風險${by(byC)}`, p: .3 + .08 * l2 + (best('c') - 60) / 200 + bonus('amb'), dmg: 55, failLoss: 1.4 });
-      if (!nd.includes('plot')) list.push({ id: 'plot', n: '調略', lead: lead(byP), d: `勸降、離間；成功時兵損減半${by(byP)}`, p: .26 + (S.gens.reduce((m, g) => Math.max(m, byP(g)), 40) - 60) / 220 + bonus('plot'), dmg: 30, lossMul: .5 });
-      if (!nd.includes('gun') && canGun()) list.push({ id: 'gun', n: '鐵砲齊射', lead: lead(byW), d: '每次花費 8 金', p: .58 + bonus('gun'), dmg: 40, cost: 8 });
+
+    // 戰場：上方敵軍、下方我軍，左中右三路
+    const laneHtml = (i, mode) => {
+      const f = foe[i], l = our[i];
+      const adv = BEATS[l.type] === f.type ? 'adv' : BEATS[f.type] === l.type ? 'dis' : '';
+      const intent = mode === 'setup' ? '' : f.broken ? '<span class="intent br">潰走</span>' : f.known ? `<span class="intent i-${f.intent}">${INTENT[f.intent]}</span>` : '<span class="intent unk">意圖不明</span>';
+      const foeCard = `<div class="ln-card foe ${f.broken ? 'broken' : ''}"><div class="ln-top"><span class="ut-ico foe">${UT[f.type].s}</span><div><b>${UT[f.type].n}</b><small class="num">${fmt(f.troops)} 人</small></div></div><span class="lbar"><span style="width:${f.t0 ? f.troops / f.t0 * 100 : 0}%"></span></span>${intent}</div>`;
+      let ourInner;
+      if (mode === 'setup') {
+        const typeBtns = ['cav', 'spear', ...(canGun() ? ['gun'] : [])].map(ty => `<button class="ut ${l.type === ty ? 'on' : ''}" data-i="${i}" data-ty="${ty}" aria-label="${UT[ty].n}">${UT[ty].s}</button>`).join('');
+        const genSel = `<select class="ln-gen" data-i="${i}" aria-label="${LANE[i]}的大將"><option value="">（無大將）</option>${S.gens.map(g => `<option value="${g}" ${l.g === g ? 'selected' : ''}>${GEN[g].n}・武${stat(g, 'w')}・智${stat(g, 'c')}</option>`).join('')}</select>`;
+        ourInner = `${genSel}<div class="uts">${typeBtns}</div><div class="pct"><button class="pm" data-i="${i}" data-d="-10" aria-label="減少${LANE[i]}兵力">−</button><span class="num">${l.pct}%・${fmt(T * l.pct / 100)}</span><button class="pm" data-i="${i}" data-d="10" aria-label="增加${LANE[i]}兵力">＋</button></div>`;
+      } else {
+        const ords = l.broken ? '<span class="intent br">潰走</span>' : `<div class="ords">${Object.entries(ORD).map(([k, n]) => { const dis = k === 'feint' && !(l.g && stat(l.g, 'c') >= 60); return `<button class="ord ${l.order === k ? 'on' : ''}" data-i="${i}" data-o="${k}" ${dis ? 'disabled title="誘敵需要智謀 60 以上的大將"' : ''}>${n}</button>`; }).join('')}</div>`;
+        ourInner = `<div class="ln-g">${l.g ? portrait(GEN[l.g], 'sm') + `<span>${GEN[l.g].n}</span>` : '<span class="fine">（無大將）</span>'}</div><div class="ln-top"><span class="ut-ico">${UT[l.type].s}</span><div><b>${UT[l.type].n}</b><small class="num">${fmt(l.troops)} 人</small></div></div><span class="lbar"><span style="width:${l.t0 ? l.troops / l.t0 * 100 : 0}%"></span></span>${ords}`;
+      }
+      return `<div class="lane" data-i="${i}"><div class="ln-name">${LANE[i]}</div>${foeCard}<div class="ln-vs ${adv}">${adv === 'adv' ? '▲ 相剋有利' : adv === 'dis' ? '▼ 相剋不利' : '・'}</div><div class="ln-card our ${l.broken ? 'broken' : ''}">${ourInner}</div></div>`;
+    };
+    const field = mode => `<div class="bf">
+      <div class="bf-hq foe"><b>${esc(def.cmd)}</b><span>敵本陣士氣</span><span class="hqbar"><span style="width:${clamp(st.hq.foe, 0, 100)}%"></span></span><span class="num">${Math.max(0, Math.round(st.hq.foe))}</span></div>
+      <div class="bf-lanes">${[0, 1, 2].map(i => laneHtml(i, mode)).join('')}</div>
+      <div class="bf-hq our"><b>${esc(leaderName())}</b><span>本陣士氣</span><span class="hqbar"><span style="width:${clamp(st.hq.our, 0, 100)}%"></span></span><span class="num">${Math.max(0, Math.round(st.hq.our))}</span></div></div>`;
+
+    const setup = () => {
+      const resPct = 100 - our.reduce((a, l) => a + l.pct, 0);
+      const ter = def.terrain === 'mountain' ? '這裡是山地：騎馬隊威力下降，固守的一方更有利。' : def.terrain === 'plain' ? '這裡是平原：騎馬隊威力上升。' : '';
+      openModal(`${head(yearLabel(S.year))}<div class="sheet-body"><div class="kicker">布陣</div><h2>${esc(def.n)}</h2>
+        <p class="fine">斥候已看清敵軍三路的兵種。用相剋克制他們：<b>鐵砲克騎馬・騎馬克長槍・長槍克鐵砲</b>。${ter}${canGun() ? '' : '（你還沒有鐵砲，可以在城下町或事件中取得。）'}</p>
+        <div class="forms" role="group" aria-label="陣形">${Object.entries(FORMS).map(([k, f]) => `<button class="form ${st.form === k ? 'on' : ''}" data-f="${k}">${f.n}</button>`).join('')}</div>
+        <p class="form-d"><b class="brush">${FORMS[st.form].n}之陣</b>：${FORMS[st.form].d}<br><span class="fine">${FORMS[st.form].hist}</span></p>
+        ${field('setup')}
+        <p class="bf-res">預備隊 <b class="num">${resPct}%</b>（約 ${fmt(T * resPct / 100)} 人）：戰鬥中可以投入任何一路。</p>
+        <div class="actions"><button class="btn btn-shu" id="bf-go">開戰</button></div></div>`, { quiet: true, keepScroll: true });
+      document.querySelectorAll('#modal .form').forEach(b => b.onclick = () => { st.form = b.dataset.f; setup(); });
+      document.querySelectorAll('#modal .ut').forEach(b => b.onclick = () => { our[+b.dataset.i].type = b.dataset.ty; setup(); });
+      document.querySelectorAll('#modal .ln-gen').forEach(s => s.onchange = () => {
+        const i = +s.dataset.i, g = s.value || null, other = our.findIndex((l, k) => k !== i && g && l.g === g);
+        if (other >= 0) our[other].g = our[i].g;
+        our[i].g = g; setup();
+      });
+      document.querySelectorAll('#modal .pm').forEach(b => b.onclick = () => {
+        const l = our[+b.dataset.i], d = +b.dataset.d, sum = our.reduce((a, x) => a + x.pct, 0);
+        if (d > 0 && sum + d > 100) return;
+        l.pct = clamp(l.pct + d, 0, 70); setup();
+      });
+      $('#bf-go').onclick = () => {
+        our.forEach(l => { l.troops = l.t0 = Math.round(T * l.pct / 100); if (l.troops <= 0) { l.broken = true; } });
+        st.reserve = T - our.reduce((a, l) => a + l.troops, 0);
+        st.round = 1; genIntents(); roundView();
+      };
+    };
+
+    function genIntents() {
+      const W = { cav: [['charge', .65], ['hold', .35]], spear: [['charge', .4], ['hold', .6]], gun: [['shoot', .6], ['hold', .3], ['charge', .1]] };
+      foe.forEach((f, i) => {
+        if (f.broken) return;
+        if (our[i].broken) { f.intent = 'charge'; return; }
+        let t = rnd(); for (const [k, w] of W[f.type]) { t -= w; if (t <= 0) { f.intent = k; break; } }
+      });
+      const n = 1 + (best('c') >= 80 ? 1 : 0) + (bonus('foresight') ? 1 : 0) + (st.intel ? 1 : 0);
+      const alive = shuffle(foe.filter(f => !f.broken));
+      foe.forEach(f => { f.known = false; });
+      alive.slice(0, n).forEach(f => { f.known = true; });
+    }
+    function planList() {
+      const L = [];
       (def.specials || []).forEach(sp => {
         if (st.used[sp.id] && !MULTI.has(sp.id)) return;
-        if (sp.rounds && !sp.rounds.includes(st.round)) return;
+        if (sp.rounds && !sp.rounds.includes(Math.min(st.round, 3))) return;
         if (sp.req && !sp.req(G)) return;
-        list.push(Object.assign({ special: 1, lead: lead(byC) }, sp, { p: sp.instant || sp.noAttack ? 1 : sp.p(G) }));
+        L.push({ key: 'sp:' + sp.id, n: sp.n, d: sp.d || '', pct: sp.instant || sp.noAttack ? undefined : Math.round(clamp(sp.p(G) + st.buff, .03, .97) * 100) });
       });
-      list.forEach(t => { if (!t.instant && !t.noAttack) t.p = st.burst ? 1 : clamp(t.p + extra(), .03, .97); });
-      if (!def.boss && !nd.includes('retreat')) list.push({ id: 'retreat', n: '撤退', d: bonus('escape') ? '保全兵力（撤退無損）' : '放棄這場合戰，威望 -8', instant: 'retreat', p: 1 });
-      return list;
-    };
-    const draw = () => {
-      const roundText = def.roundText && def.roundText[st.round];
-      const list = tactics();
-      const ftNow = Math.round(def.ft * (.35 + .65 * st.hp / 100));
-      openModal(`${head(`第${RN[st.round]}回合`)}<div class="sheet-body">
-        <div class="armies">
-          <div class="army"><b>${esc(leaderName())}</b><small>兵力 ${fmt(st.bt)} / ${fmt(st.bt0)}</small><div class="gauge"><span style="width:${clamp(st.bt / st.bt0 * 100, 0, 100)}%"></span></div></div>
-          <div class="vs">對</div>
-          <div class="army foe"><b>${esc(def.cmd)}</b><small>士氣 ${Math.max(0, Math.round(st.hp))}・${bonus('foresight') ? '' : '約 '}${fmt(ftNow)} 人</small><div class="gauge"><span style="width:${clamp(st.hp, 0, 100)}%"></span></div></div>
-        </div>
-        <div class="rounds">${[1, 2, 3].map(i => `<i class="${i < st.round ? 'done' : i === st.round ? 'on' : ''}">${RN[i]}</i>`).join('')}</div>
+      if (!st.plotUsed) L.push({ key: 'plot', n: '調略敵軍', d: '勸誘兵力最多的一路敵軍倒戈撤走一半（每戰一次）', pct: Math.round(plotP() * 100) });
+      if (S.fac === 'takeda' && !st.furinUsed) L.push({ key: 'furin', n: '風林火山', d: '本回合全軍攻擊 +40%（每戰一次）' });
+      if (S.fac === 'uesugi' && !st.biUsed) L.push({ key: 'bi', n: '毘沙門天的加護', d: '本回合「進攻」的各路不會被敵軍固守或射擊壓制（每戰一次）' });
+      if (S.fac === 'oda' && !st.sanUsed && our.some(l => l.type === 'gun' && !l.broken)) L.push({ key: 'san', n: '鐵砲輪射', d: '本回合鐵砲隊攻擊 ×1.8（每戰一次）' });
+      if (S.fac === 'tokugawa' && S.gauge >= 100) L.push({ key: 'burst', n: '忍耐爆發', d: '本回合我軍不受任何損失（消耗忍 100）' });
+      return L;
+    }
+
+    const roundView = () => {
+      const plans = planList();
+      if (st.plan && !plans.some(p => p.key === st.plan)) st.plan = null;
+      const roundText = def.roundText && def.roundText[Math.min(st.round, 3)];
+      const cur = plans.find(p => p.key === st.plan);
+      openModal(`${head(`第${RNX[st.round]}回合`)}<div class="sheet-body"><div class="kicker">合戰・${FORMS[st.form].n}之陣${survive ? `・撐過 ${maxR} 回合` : `・最多 ${maxR} 回合`}</div>
+        <div class="rounds">${Array.from({ length: maxR }, (_, k) => k + 1).map(i => `<i class="${i < st.round ? 'done' : i === st.round ? 'on' : ''}">${RNX[i]}</i>`).join('')}</div>
         ${roundText ? `<p class="story"><b class="brush">${esc(roundText)}</b></p>` : ''}
-        ${st.log.length ? `<div class="blog" id="blog">${st.log.map(l => `<p class="${l.c}">${esc(l.t)}</p>`).join('')}</div>` : ''}
-        <div class="power">
-          ${S.fac === 'takeda' && !st.furinUsed ? `<button class="btn btn-sm ${st.furin ? 'armed' : ''}" id="pw-furin">風林火山 ${st.furin ? '（已發動：下一個戰術 +25%）' : '（每戰一次：下一個戰術 +25%）'}</button>` : ''}
-          ${S.fac === 'tokugawa' && S.gauge >= 100 && !st.burst ? '<button class="btn btn-sm" id="pw-burst">忍耐爆發（忍 100）</button>' : ''}
-          ${st.burst ? '<span class="fine">忍耐爆發：下一個戰術必定成功</span>' : ''}
+        <p class="fine">軍令要點：敵軍<b>突擊</b>時，用<b>固守</b>或<b>誘敵</b>反制；敵軍<b>固守</b>或<b>射擊</b>時，<b>進攻</b>比較划算。意圖不明時，就看你的判斷了。</p>
+        ${field('round')}
+        <div class="bf-ctl">
+          ${!st.resUsed && st.reserve > 0 ? `<div class="row"><span>預備隊 ${fmt(st.reserve)} 人：</span>${['不投入', ...LANE].map((n, k) => `<button class="rsv ${st.resTo === k - 1 ? 'on' : ''}" data-k="${k - 1}" ${k > 0 && our[k - 1].broken ? 'disabled' : ''}>${n}</button>`).join('')}</div>` : ''}
+          ${plans.length ? `<div class="row"><span>計策：</span>${plans.map(p => `<button class="plan ${st.plan === p.key ? 'on' : ''}" data-k="${p.key}">${esc(p.n)}${p.pct !== undefined ? ` <small class="num">${p.pct}%</small>` : ''}</button>`).join('')}</div><p class="fine">${cur ? esc(cur.d) : '每回合可以選一項計策，也可以不用。'}</p>` : ''}
         </div>
-        <div class="tactics">${list.map((t, i) => `<button class="tac ${t.special ? 'special' : ''}" data-i="${i}" ${t.cost && S.gold < t.cost ? 'disabled' : ''}><b>${esc(t.n)}</b><span class="pct">${t.instant ? '' : Math.round(t.p * 100) + '%'}</span><small>${esc(t.d || '')}</small></button>`).join('')}</div>
-      </div>`, { quiet: true, keepScroll: true });
+        ${st.log.length ? `<div class="blog" id="blog">${st.log.slice(-14).map(l => `<p class="${l.c}">${esc(l.t)}</p>`).join('')}</div>` : ''}
+        <div class="actions">${!def.boss ? '<button class="btn" id="bf-retreat">撤退</button>' : ''}<button class="btn btn-shu" id="bf-go">下令</button></div></div>`, { quiet: true, keepScroll: true });
       const bl = $('#blog'); if (bl) bl.scrollTop = bl.scrollHeight;
+      document.querySelectorAll('#modal .ord').forEach(b => b.onclick = () => { our[+b.dataset.i].order = b.dataset.o; roundView(); });
+      document.querySelectorAll('#modal .rsv').forEach(b => b.onclick = () => { st.resTo = +b.dataset.k; roundView(); });
+      document.querySelectorAll('#modal .plan').forEach(b => b.onclick = () => { st.plan = st.plan === b.dataset.k ? null : b.dataset.k; roundView(); });
+      const rb = $('#bf-retreat'); if (rb) rb.onclick = () => end('retreat');
+      $('#bf-go').onclick = exec;
       if (st.fx) {
         const f = st.fx; st.fx = null;
         const svg = $('#modal .scene'), box = $('#modal .scene-box');
-        const foeG = $('#modal .army.foe .gauge'), ourG = $('#modal .army:not(.foe) .gauge');
-        if (f.ok && !f.noAttack) {
-          if (f.kind === 'gun' || f.kind === 'saku') TFx.volley(svg, true, 'gun');
-          else if (f.kind === 'strike' || f.kind === 'charge' || f.kind === 'kuruma') TFx.charge(svg, true);
-          else TFx.volley(svg, true, 'arrow');
-          if (f.dmg) { TFx.floatText(foeG, `士氣 -${f.dmg}`, ''); TFx.shake(foeG); }
-          TFx.flash(box, 'rgba(255,240,200,.6)');
-        } else if (!f.ok) {
-          TFx.charge(svg, false); TFx.volley(svg, false, 'arrow'); TFx.flash(box, 'rgba(120,20,10,.35)');
-          TFx.floatText(foeG, '失敗', 'bad');
-        }
-        if (f.loss) { TFx.floatText(ourG, `-${fmt(f.loss)}`, 'bad'); TFx.shake(ourG, 4); }
+        f.lanes.forEach((x, i) => {
+          const lane = document.querySelector(`#modal .lane[data-i="${i}"]`); if (!lane) return;
+          if (x.toFoe) { TFx.floatText(lane.querySelector('.ln-card.foe'), `-${fmt(x.toFoe)}`, ''); TFx.shake(lane.querySelector('.ln-card.foe'), 3); }
+          if (x.toUs) TFx.floatText(lane.querySelector('.ln-card.our'), `-${fmt(x.toUs)}`, 'bad');
+        });
+        if (f.hq) { TFx.floatText($('#modal .bf-hq.foe .hqbar'), `士氣 -${f.hq}`, ''); TFx.shake($('#modal .bf-hq.foe')); }
+        if (f.ourHq) TFx.floatText($('#modal .bf-hq.our .hqbar'), `士氣 -${f.ourHq}`, 'bad');
+        if (f.gun) TFx.volley(svg, true, 'gun'); else TFx.volley(svg, true, 'arrow');
+        if (f.charge) TFx.charge(svg, true);
+        if (f.plan === 'ok') TFx.flash(box, 'rgba(255,240,200,.6)');
+        if (f.plan === 'ng') TFx.flash(box, 'rgba(120,20,10,.35)');
       }
-      const fb = $('#pw-furin'); if (fb) fb.onclick = () => { st.furin = !st.furin; draw(); };
-      const bb = $('#pw-burst'); if (bb) bb.onclick = () => { st.burst = true; S.gauge = 0; refresh(); draw(); };
-      document.querySelectorAll('#modal .tac').forEach(b => b.onclick = () => act(list[+b.dataset.i]));
     };
-    const loss = mul => {
-      const ep = EP * (.4 + .6 * clamp(st.hp, 0, 100) / 100);
-      let f = clamp(.05 + .07 * ep / Math.max(1, st.bt), .04, def.cap || .32) * (.85 + rnd() * .3);
-      f *= 1 - Math.min(.5, bonus('def'));
-      if (def.mode === 'survive' && bonus('siege')) f *= .8;
-      return Math.max(def.local ? 1 : 10, Math.round(st.bt * f * mul));
-    };
-    const act = t => {
-      if (t.instant === 'history') return end('history');
-      if (t.instant === 'withdraw') { st.log.push({ c: 'sys', t: '你下令撤退。' }); return end('withdraw'); }
-      if (t.instant === 'retreat') return end('retreat');
-      st.used[t.id] = 1;
-      if (t.cost) S.gold -= t.cost;
-      let mul = 1, ok = true, dmgDone = 0;
-      if (t.noAttack) {
-        st.buff += t.buff || 0; mul = .5;
-        st.log.push({ c: 'ok', t: `${t.n}。${t.buff ? `之後的戰術成功率 +${Math.round(t.buff * 100)}%。` : ''}` });
-      } else {
-        ok = rnd() < t.p;
-        if (ok) {
-          const dmg = t.dmg >= 999 ? 999 : Math.round(t.dmg * (st.dmul || 1));
-          st.hp -= dmg; dmgDone = dmg >= 999 ? 0 : dmg;
-          mul = t.lossMul !== undefined ? t.lossMul : 1;
-          if (t.lead) { gainMerit(t.lead, def.boss ? 3 : 2); st.log.push({ c: 'sys', t: `${GEN[t.lead].n} 立下戰功（功勳 +${def.boss ? 3 : 2}）。` }); }
-          st.log.push({ c: 'ok', t: `${t.n}成功！${dmg >= 999 ? '' : dmg ? `敵軍士氣 -${dmg}。` : ''}` });
-          if (t.prov && S.owners[t.prov] !== S.fac) { S.owners[t.prov] = S.fac; st.log.push({ c: 'ok', t: `取得${TMap.byId[t.prov].n}。` }); }
-        } else {
-          mul = t.failLoss || 1;
-          st.log.push({ c: 'ng', t: t.failText || `${t.n}失敗了。` });
-          if (S.fac === 'tokugawa') S.gauge = clamp(S.gauge + 4, 0, 100);
-        }
+
+    const exec = () => {
+      const plan = st.plan; st.plan = null;
+      let atkMul = 1 + st.buff, lossMul = (FORMS[st.form].lossMul || 1) * (1 - Math.min(.5, bonus('def'))), hqHit = 0, noPenalty = false, gunMul = 1;
+      const fx = { lanes: [{}, {}, {}] };
+      if (st.resTo >= 0 && !st.resUsed && !our[st.resTo].broken) {
+        const l = our[st.resTo];
+        l.troops += st.reserve; l.t0 += st.reserve;
+        st.log.push({ c: 'ok', t: `預備隊 ${fmt(st.reserve)} 人投入${LANE[st.resTo]}。` });
+        st.reserve = 0; st.resUsed = true;
       }
-      if (t.eff) applyEff(t.eff);
-      if (st.furin && !t.noAttack) { st.furin = false; st.furinUsed = true; }
-      if (st.burst && !t.noAttack) st.burst = false;
-      if (st.hp <= 0) return end('win');
-      const l = loss(mul);
-      if (mul > 0) { st.bt = Math.max(0, st.bt - l); st.log.push({ c: 'sys', t: `我軍損失 ${fmt(l)} 人。` }); }
-      else st.log.push({ c: 'sys', t: '敵軍沒有發動攻擊。' });
-      st.fx = { ok, kind: t.id, dmg: dmgDone, loss: mul > 0 ? l : 0, noAttack: t.noAttack };
-      if (st.bt <= st.bt0 * .15) return end('lose');
+      st.resTo = -1;
+      if (plan) {
+        if (plan.startsWith('sp:')) {
+          const sp = def.specials.find(x => 'sp:' + x.id === plan);
+          st.used[sp.id] = 1;
+          if (sp.instant === 'history') return end('history');
+          if (sp.instant === 'withdraw') return end('withdraw');
+          if (sp.noAttack) {
+            st.buff += sp.buff || 0;
+            st.log.push({ c: 'ok', t: `${sp.n}。之後全軍攻擊 +${Math.round((sp.buff || 0) * 100)}%。` });
+          } else if (rnd() < clamp(sp.p(G) + st.buff, .03, .97)) {
+            if (sp.dmg >= 999) { st.log.push({ c: 'ok', t: `${sp.n}成功！` }); if (sp.eff) applyEff(sp.eff); return end('win'); }
+            const h = Math.round(sp.dmg * .6);
+            hqHit += h;
+            if (sp.lossMul !== undefined) lossMul *= sp.lossMul;
+            st.log.push({ c: 'ok', t: `${sp.n}成功！${h ? `敵本陣士氣 -${h}。` : ''}` });
+            if (sp.prov && S.owners[sp.prov] !== S.fac) { S.owners[sp.prov] = S.fac; (S.newProv = S.newProv || []).push(sp.prov); st.log.push({ c: 'ok', t: `取得${TMap.byId[sp.prov].n}。` }); }
+            const lg = bestBy(id => stat(id, 'c')); if (lg) gainMerit(lg, def.boss ? 3 : 2);
+            fx.plan = 'ok';
+          } else {
+            lossMul *= sp.failLoss || 1.2;
+            st.log.push({ c: 'ng', t: sp.failText || `${sp.n}失敗了。` });
+            fx.plan = 'ng';
+          }
+          if (sp.eff) applyEff(sp.eff);
+        } else if (plan === 'plot') {
+          st.plotUsed = true;
+          if (rnd() < plotP()) {
+            const tgt = foe.filter(f => !f.broken).sort((a, b) => b.troops - a.troops)[0];
+            if (tgt) { tgt.troops = Math.round(tgt.troops * .5); tgt.intent = 'hold'; st.log.push({ c: 'ok', t: `調略成功！敵方${LANE[foe.indexOf(tgt)]}有一半人馬倒戈撤走。` }); fx.plan = 'ok'; }
+            const lg = bestBy(id => stat(id, 'c') + stat(id, 'a')); if (lg) gainMerit(lg, 2);
+          } else { st.log.push({ c: 'ng', t: '調略失敗，使者被趕了回來。' }); fx.plan = 'ng'; }
+        } else if (plan === 'furin') { st.furinUsed = true; atkMul += .4; st.log.push({ c: 'ok', t: '「疾如風，徐如林，侵掠如火，不動如山」——全軍攻擊大增！' }); }
+        else if (plan === 'bi') { st.biUsed = true; noPenalty = true; st.log.push({ c: 'ok', t: '「毘」字旗高高舉起，全軍奮勇向前！' }); }
+        else if (plan === 'san') { st.sanUsed = true; gunMul = 1.8; st.log.push({ c: 'ok', t: '鐵砲隊輪番射擊，槍聲不絕！' }); }
+        else if (plan === 'burst') { S.gauge = 0; lossMul = 0; st.log.push({ c: 'ok', t: '你咬緊牙關，全軍穩住陣腳：本回合毫無損失！' }); }
+      }
+      const tm = def.terrain === 'mountain' ? { cav: .8 } : def.terrain === 'plain' ? { cav: 1.15 } : {};
+      const fm = FORMS[st.form].m, hqMul = FORMS[st.form].hqMul || 1;
+      const gm = id => id ? 1 + (stat(id, 'w') - 50) / 150 : .85;
+      const ctr = (a, b, ours) => BEATS[a] === b ? (a === 'gun' && ours && S.fac === 'oda' ? 1.7 : 1.5) : BEATS[b] === a ? .7 : 1;
+      let sumFoe = 0, sumUs = 0;
+      [0, 1, 2].forEach(i => {
+        const l = our[i], f = foe[i];
+        if (l.broken && f.broken) return;
+        if (f.broken) {
+          if (l.order === 'atk') { const h = clamp(Math.round(12 + 25 * l.troops / (EP / 3)), 10, 40); hqHit += h; st.log.push({ c: 'ok', t: `${LANE[i]}突破敵陣，直撲敵本陣（士氣 -${h}）。` }); }
+          return;
+        }
+        if (l.broken) {
+          const h = Math.round(hqMul * clamp(12 + 25 * f.troops / (T / 3), 10, 40));
+          st.hq.our -= h; fx.ourHq = (fx.ourHq || 0) + h;
+          st.log.push({ c: 'ng', t: `敵軍從${LANE[i]}突入，我本陣士氣 -${h}。` });
+          return;
+        }
+        const mx = MX[l.order][f.intent].slice();
+        if (noPenalty && l.order === 'atk') { mx[0] = Math.max(mx[0], 1); mx[1] = Math.min(mx[1], 1); }
+        if (l.type === 'cav' && f.intent === 'shoot' && l.order === 'atk') mx[1] *= .85;
+        const ourP = l.troops * ctr(l.type, f.type, true) * fm[i] * gm(l.g) * (tm[l.type] || 1) * atkMul
+          * (l.type === 'gun' ? gunMul * (1 + bonus('gun')) : 1)
+          * (l.order === 'atk' ? 1 + bonus('atk') + (S.fac === 'uesugi' ? .1 : 0) : 1)
+          * (l.order === 'feint' ? 1 + bonus('amb') : 1)
+          * (bonus('lowhp') && l.troops < l.t0 * .4 ? 1.3 : 1);
+        const foeP = f.troops * ctr(f.type, l.type, false) * (tm[f.type] || 1) * (f.intent === 'hold' && def.terrain === 'mountain' ? 1.15 : 1);
+        const toFoe = Math.round(Math.min(ourP * .17 * mx[0] * (.9 + rnd() * .2), f.t0 * .45 * Math.max(mx[0], .3)));
+        const toUs = Math.round(Math.min(foeP * .17 * mx[1] * (.9 + rnd() * .2) * lossMul * (survive && bonus('siege') ? .8 : 1), l.t0 * (def.cap || .45) * Math.max(mx[1], .3)));
+        f.troops = Math.max(0, f.troops - toFoe); l.troops = Math.max(0, l.troops - toUs);
+        sumFoe += toFoe; sumUs += toUs;
+        fx.lanes[i] = { toFoe, toUs };
+        if (l.order === 'atk' && l.type === 'gun') fx.gun = true;
+        if (l.order === 'atk' && l.type === 'cav') fx.charge = true;
+        st.log.push({ c: toFoe >= toUs ? 'ok' : 'ng', t: `${LANE[i]}：我軍${ORD[l.order]}、敵軍${INTENT[f.intent]}——敵 -${fmt(toFoe)}，我 -${fmt(toUs)}。` });
+        if (l.g && toFoe > toUs) gainMerit(l.g, def.boss ? 2 : 1);
+        if (f.troops < f.t0 * .25) { f.broken = true; st.hq.foe -= 25; st.log.push({ c: 'ok', t: `敵方${LANE[i]}潰走了！敵本陣士氣 -25。` }); }
+        if (l.troops < l.t0 * .25) { l.broken = true; st.hq.our -= Math.round(25 * hqMul); st.log.push({ c: 'ng', t: `我方${LANE[i]}潰走了！本陣士氣 -${Math.round(25 * hqMul)}。` }); }
+      });
+      if (st.form === 'kakuyoku' && foe[0].broken && foe[2].broken && !st.encircled) { st.encircled = true; hqHit += 30; st.log.push({ c: 'ok', t: '鶴翼合圍！兩翼包抄敵本陣（士氣 -30）。' }); }
+      if (hqHit) { st.hq.foe -= hqHit; fx.hq = hqHit; }
+      if (S.fac === 'tokugawa' && sumUs > sumFoe) S.gauge = clamp(S.gauge + 6, 0, 100);
+      st.fx = fx;
+      const fb = foe.filter(f => f.broken).length, ob = our.filter(l => l.broken).length;
+      if (st.hq.foe <= 0 || fb >= 2) return end('win');
+      if (st.hq.our <= 0 || ob >= 2) return end('lose');
       st.round++;
-      if (st.round > 3) {
-        if (def.mode === 'survive') return end('win');
-        st.narrow = st.hp <= 40;
-        return end(st.hp <= 40 ? 'win' : 'lose');
+      if (st.round > maxR) {
+        if (survive) return end('win');
+        const ourT = our.reduce((a, l) => a + l.troops, 0) + st.reserve, foeT = foe.reduce((a, f) => a + f.troops, 0);
+        st.narrow = true;
+        return end(st.hq.foe + foeT / EP * 40 < st.hq.our + ourT / T * 40 ? 'win' : 'lose');
       }
-      refresh(); draw();
+      genIntents(); refresh(); roundView();
     };
+
     const end = res => {
       const fx = [];
-      if (!def.local) S.troops = Math.max(0, Math.round(res === 'retreat' && bonus('escape') ? S.troops : res === 'retreat' ? st.bt * .95 : res === 'withdraw' ? Math.max(st.bt, S.troops) * .85 : st.bt));
+      const left = total();
+      if (!def.local) S.troops = Math.max(0, Math.round(res === 'retreat' ? (bonus('escape') ? Math.max(left, S.troops * .9) : left * .95) : res === 'withdraw' ? Math.max(left, S.troops * .85) : left));
       if (res === 'history') { S.over = true; closeModal(); return ending('history'); }
       let title, text, cls;
       if (res === 'win') {
         S.stats.wins++;
-        title = st.narrow && st.hp > 0 ? '辛勝' : '勝利'; cls = 'win';
+        title = st.narrow ? '辛勝' : '勝利'; cls = 'win';
         const w = def.win || { t: `敵軍潰散了。${def.target ? TMap.byId[def.target].n + '落入你的手中。' : ''}`, eff: { gold: 25, pres: 5 } };
         text = w.t;
         const eff = Object.assign({}, w.eff);
@@ -991,6 +1186,11 @@
         if (w.prov) eff.prov = w.prov;
         if (def.target) eff.prov = [def.target];
         fx.push(...applyEff(eff));
+        if (def.target && PRODUCT[def.target] && !(S.gotProd = S.gotProd || []).includes(def.target)) {
+          const pr = PRODUCT[def.target]; S.gotProd.push(def.target);
+          text += `\n你取得了當地的特產「${pr.n}」。`;
+          fx.push(...applyEff(pr.eff));
+        }
         S.gens.forEach(id => gainMerit(id, 1));
         if (S.gens.length) fx.push({ t: '全體家臣 功勳 +1', c: 'up' });
         if (!def.boss && rnd() < .25) {
@@ -1008,7 +1208,7 @@
       }
       refresh();
       openModal(`${head(yearLabel(S.year))}<div class="sheet-body"><div class="result-title ${cls}">${title}</div><h2>${esc(def.n)}</h2>
-        <p class="story">${esc(text)}</p><p class="fine">剩餘兵力 ${fmt(st.bt)}${def.local ? '（隨從）' : ''}</p>${fxHtml(fx)}${histHtml(def.hist)}
+        <p class="story">${esc(text)}</p><p class="fine">剩餘兵力 ${fmt(left)}${def.local ? '（隨從）' : ''}</p>${fxHtml(fx)}${histHtml(def.hist)}
         <div class="actions"><button class="btn btn-shu" id="m-ok">${S.over ? '……' : '繼續'}</button></div></div>`, { quiet: true });
       TFx.stamp($('#modal .sheet'), cls === 'win' ? '勝' : res === 'lose' ? '敗' : '退', cls === 'win');
       if (cls === 'win') TFx.charge($('#modal .scene'), true);
