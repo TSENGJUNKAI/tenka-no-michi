@@ -41,8 +41,9 @@
 }
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { font-size: 18px; }
-@media (max-width: 560px) { html { font-size: 17px; } }
+html { font-size: 23px; }
+@media (max-width: 1100px) { html { font-size: 21px; } }
+@media (max-width: 560px) { html { font-size: 19px; } }
 html, body { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 1rem; line-height: 1.7; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ai); }
@@ -124,7 +125,7 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .bar .btn:hover { background: var(--ai-ink); color: var(--ai); }
 
 /* 主畫面 */
-.run { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px minmax(0, 1fr) 350px; }
+.run { flex: 1; min-height: 0; display: grid; grid-template-columns: 390px minmax(0, 1fr) 430px; }
 .panel { background: var(--paper); overflow: auto; min-height: 0; }
 .route { border-right: 1px solid var(--line); display: flex; flex-direction: column; }
 .camp { border-left: 1px solid var(--line); }
@@ -140,13 +141,13 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .edges line { stroke: var(--ink3); stroke-width: 1.4; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
 .edges line.walk { stroke: var(--shu); stroke-dasharray: none; stroke-width: 2.2; }
 .rowlbl { position: absolute; left: -46px; width: 42px; text-align: right; font-size: .72rem; line-height: 1.2; color: var(--ink3); transform: translateY(-50%); font-family: var(--f-brush); }
-.node { position: absolute; transform: translate(-50%, -50%); width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--ink2); background: var(--paper); display: grid; place-items: center; font-family: var(--f-brush); font-size: 1.25rem; cursor: default; padding: 0; color: var(--ink2); transition: transform .15s; }
+.node { position: absolute; transform: translate(-50%, -50%); width: 2.3rem; height: 2.3rem; border-radius: 50%; border: 1.5px solid var(--ink2); background: var(--paper); display: grid; place-items: center; font-family: var(--f-brush); font-size: 1.25rem; cursor: default; padding: 0; color: var(--ink2); transition: transform .15s; }
 .node.t-battle { color: var(--shu); border-color: var(--shu); }
 .node.t-recruit { color: var(--r2); border-color: var(--r2); }
 .node.t-shop { color: var(--kin); border-color: var(--kin); }
 .node.t-temple { color: var(--ok); border-color: var(--ok); }
 .node.t-diplo { color: #7d5aa0; border-color: #7d5aa0; }
-.node.t-boss { width: 62px; height: 62px; font-size: 1.6rem; background: var(--shu); color: var(--shu-ink); border-color: var(--shu); }
+.node.t-boss { width: 3rem; height: 3rem; font-size: 1.6rem; background: var(--shu); color: var(--shu-ink); border-color: var(--shu); }
 .node.avail { cursor: pointer; box-shadow: 0 0 0 4px var(--paper), 0 0 0 6px currentColor; animation: breathe 1.8s ease-in-out infinite; }
 .node.avail:hover { transform: translate(-50%, -50%) scale(1.1); }
 .node.done { background: var(--ink2); color: var(--paper); border-color: var(--ink2); }
@@ -241,7 +242,7 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 
 /* 彈出卷軸 */
 #modal { position: fixed; inset: 0; z-index: 40; background: var(--veil); display: grid; place-items: center; padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
-.sheet { width: min(760px, 100%); max-height: 100%; overflow: auto; background: var(--paper); border-radius: 3px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.6); position: relative; animation: unroll .35s ease-out; }
+.sheet { width: min(900px, 100%); max-height: 100%; overflow: auto; background: var(--paper); border-radius: 3px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.6); position: relative; animation: unroll .35s ease-out; }
 @keyframes unroll { from { opacity: 0; transform: translateY(10px) scale(.985); } }
 .sheet::before { content: ""; position: absolute; inset: 6px; border: 1px solid var(--line); pointer-events: none; border-radius: 2px; }
 .scene-box { position: relative; aspect-ratio: 3 / 1; max-width: 100%; overflow: hidden; border-bottom: 1px solid var(--line); }
@@ -347,7 +348,7 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .estats small { color: var(--ink2); font-size: .8rem; }
 .unlock { border: 1px solid var(--kin); background: var(--paper); padding: 10px 14px; font-family: var(--f-brush); }
 
-#toasts { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top, 0px) + 70px); right: max(12px, env(safe-area-inset-right, 0px)); display: grid; gap: 8px; width: min(320px, calc(100vw - 24px)); pointer-events: none; }
+#toasts { position: fixed; z-index: 60; top: calc(env(safe-area-inset-top, 0px) + 70px); right: max(12px, env(safe-area-inset-right, 0px)); display: grid; gap: 8px; width: min(440px, calc(100vw - 24px)); pointer-events: none; }
 .toast { background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--kin); padding: 8px 12px; box-shadow: var(--shadow); font-size: .88rem; animation: tin .3s ease-out; }
 .toast b { font-family: var(--f-brush); }
 @keyframes tin { from { opacity: 0; transform: translateX(20px); } }
@@ -625,7 +626,7 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 }
 
 @media (max-width: 1100px) {
-  .run { grid-template-columns: 270px minmax(0, 1fr); }
+  .run { grid-template-columns: 340px minmax(0, 1fr); }
   .camp { display: none; }
   .tabs { display: flex; }
   .run[data-tab="camp"] .camp { display: block; position: absolute; }
@@ -675,12 +676,12 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 <div id="modal" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 
-<script src="map.js?v=7d"></script>
-<script src="data.js?v=7d"></script>
-<script src="art.js?v=7d"></script>
+<script src="map.js?v=7f"></script>
+<script src="data.js?v=7f"></script>
+<script src="art.js?v=7f"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="fx.js?v=7d"></script>
-<script src="audio.js?v=7d"></script>
-<script src="game.js?v=7d"></script>
+<script src="fx.js?v=7f"></script>
+<script src="audio.js?v=7f"></script>
+<script src="game.js?v=7f"></script>
 </body>
 </html>

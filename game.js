@@ -563,7 +563,7 @@
   function renderRoute() {
     const el = $('#route'); if (!el) return;
     if (!S.map) { el.innerHTML = `<div class="chap"><div class="k">序章</div><h3>${esc(P().lord)}</h3></div>`; return; }
-    const c = P().ch[S.ch], rows = S.map.rows, H = 78, total = rows.length * H;
+    const c = P().ch[S.ch], rows = S.map.rows, H = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize) * 3.6), total = rows.length * H;
     const av = availNodes().map(([r, cc]) => r + ':' + cc);
     const xpos = (i, n) => (i + .5) / n * 100;
     let edges = '', nodes = '', lbls = '';
