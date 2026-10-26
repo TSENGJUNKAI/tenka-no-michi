@@ -894,11 +894,11 @@
   const BEATS = { gun: 'cav', cav: 'spear', spear: 'gun' };
   const LANE = ['左翼', '中央', '右翼'];
   const FORMS = {
-    gyorin: { n: '魚鱗', d: '中央 +30%、兩翼 -10%：集中兵力從正中突破。', m: [.9, 1.3, .9], hist: '部隊像魚鱗般層層排列、中央突出，適合以少擊多。三方原之戰中，武田信玄擺的就是魚鱗之陣。' },
-    kakuyoku: { n: '鶴翼', d: '兩翼 +20%、中央 -15%：兩翼都擊潰敵軍時，可包圍敵本陣（士氣 -30）。', m: [1.2, .85, 1.2], hist: '像鶴展翅般向兩側張開，適合以多擊少、包圍敵軍。三方原之戰中，德川家康就擺出鶴翼之陣迎戰武田。' },
-    hoshi: { n: '鋒矢', d: '全軍攻擊 +15%，但我軍損失也 +15%。', m: [1.15, 1.15, 1.15], lossMul: 1.15, hist: '像箭頭一樣全力向前衝，是攻擊性最強的陣形，但側面和後方容易被攻破。' },
-    engetsu: { n: '偃月', d: '中央 +15%，大將在前鼓舞士氣：本陣士氣受損 -40%。', m: [1, 1.15, 1], hqMul: .6, hist: '大將親自站在弧形陣前端，士氣高昂但大將危險。傳說上杉謙信擅長這種陣形。' },
-    hoen: { n: '方圓', d: '我軍損失 -25%，攻擊 -15%：適合死守待援。', m: [.85, .85, .85], lossMul: .75, hist: '把大將圍在中央的圓形防禦陣，適合被包圍時固守，或等待援軍到來。' }
+    gyorin: { n: '魚鱗', d: '中央突出：中央 +30%，兩翼 -10%', pos: [0, 24, 0], m: [.9, 1.3, .9], hist: '部隊像魚鱗般層層排列、中央突出，適合以少擊多。三方原之戰中，武田信玄擺的就是魚鱗之陣。' },
+    kakuyoku: { n: '鶴翼', d: '兩翼前伸：兩翼 +20%，中央 -15%；兩翼都勝可包圍本陣', pos: [24, -8, 24], m: [1.2, .85, 1.2], hist: '像鶴展翅般向兩側張開，適合以多擊少、包圍敵軍。三方原之戰中，德川家康就擺出鶴翼之陣迎戰武田。' },
+    hoshi: { n: '鋒矢', d: '全軍突擊：攻擊 +15%，損失 +15%', pos: [12, 34, 12], m: [1.15, 1.15, 1.15], lossMul: 1.15, hist: '像箭頭一樣全力向前衝，是攻擊性最強的陣形，但側面和後方容易被攻破。' },
+    engetsu: { n: '偃月', d: '大將在前：中央 +15%，本陣受損 -40%', pos: [4, 16, 4], m: [1, 1.15, 1], hqMul: .6, hist: '大將親自站在弧形陣前端，士氣高昂但大將危險。傳說上杉謙信擅長這種陣形。' },
+    hoen: { n: '方圓', d: '圓陣死守：損失 -25%，攻擊 -15%', pos: [-16, -10, -16], m: [.85, .85, .85], lossMul: .75, hist: '把大將圍在中央的圓形防禦陣，適合被包圍時固守，或等待援軍到來。' }
   };
   const ORD = { atk: '進攻', hold: '固守', feint: '誘敵' };
   const INTENT = { charge: '突擊', hold: '固守', shoot: '射擊' };
@@ -948,38 +948,50 @@
       $('#m-ok').focus(); $('#m-ok').onclick = setup;
     };
 
-    // 戰場：上方敵軍、下方我軍，左中右三路
-    const laneHtml = (i, mode) => {
-      const f = foe[i], l = our[i];
-      const adv = BEATS[l.type] === f.type ? 'adv' : BEATS[f.type] === l.type ? 'dis' : '';
-      const intent = mode === 'setup' ? '' : f.broken ? '<span class="intent br">潰走</span>' : f.known ? `<span class="intent i-${f.intent}">${INTENT[f.intent]}</span>` : '<span class="intent unk">意圖不明</span>';
-      const foeCard = `<div class="ln-card foe ${f.broken ? 'broken' : ''}"><div class="ln-top"><span class="ut-ico foe">${UT[f.type].s}</span><div><b>${UT[f.type].n}</b><small class="num">${fmt(f.troops)} 人</small></div></div><span class="lbar"><span style="width:${f.t0 ? f.troops / f.t0 * 100 : 0}%"></span></span>${intent}</div>`;
-      let ourInner;
-      if (mode === 'setup') {
-        const typeBtns = ['cav', 'spear', ...(canGun() ? ['gun'] : [])].map(ty => `<button class="ut ${l.type === ty ? 'on' : ''}" data-i="${i}" data-ty="${ty}" aria-label="${UT[ty].n}">${UT[ty].s}</button>`).join('');
-        const genSel = `<select class="ln-gen" data-i="${i}" aria-label="${LANE[i]}的大將"><option value="">（無大將）</option>${S.gens.map(g => `<option value="${g}" ${l.g === g ? 'selected' : ''}>${GEN[g].n}・武${stat(g, 'w')}・智${stat(g, 'c')}</option>`).join('')}</select>`;
-        ourInner = `${genSel}<div class="uts">${typeBtns}</div><div class="pct"><button class="pm" data-i="${i}" data-d="-10" aria-label="減少${LANE[i]}兵力">−</button><span class="num">${l.pct}%・${fmt(T * l.pct / 100)}</span><button class="pm" data-i="${i}" data-d="10" aria-label="增加${LANE[i]}兵力">＋</button></div>`;
-      } else {
-        const ords = l.broken ? '<span class="intent br">潰走</span>' : `<div class="ords">${Object.entries(ORD).map(([k, n]) => { const dis = k === 'feint' && !(l.g && stat(l.g, 'c') >= 60); return `<button class="ord ${l.order === k ? 'on' : ''}" data-i="${i}" data-o="${k}" ${dis ? 'disabled title="誘敵需要智謀 60 以上的大將"' : ''}>${n}</button>`; }).join('')}</div>`;
-        ourInner = `<div class="ln-g">${l.g ? portrait(GEN[l.g], 'sm') + `<span>${GEN[l.g].n}</span>` : '<span class="fine">（無大將）</span>'}</div><div class="ln-top"><span class="ut-ico">${UT[l.type].s}</span><div><b>${UT[l.type].n}</b><small class="num">${fmt(l.troops)} 人</small></div></div><span class="lbar"><span style="width:${l.t0 ? l.troops / l.t0 * 100 : 0}%"></span></span>${ords}`;
-      }
-      return `<div class="lane" data-i="${i}"><div class="ln-name">${LANE[i]}</div>${foeCard}<div class="ln-vs ${adv}">${adv === 'adv' ? '▲ 相剋有利' : adv === 'dis' ? '▼ 相剋不利' : '・'}</div><div class="ln-card our ${l.broken ? 'broken' : ''}">${ourInner}</div></div>`;
+    // 戰場圖：上方敵軍、下方我軍，左中右三路
+    const LX = [110, 300, 490], EY = 124, OY = 262;
+    const unit = Math.max(T, EP) / 30;
+    const ourCol = FAC[S.fac].color, foeCol = foeColor || '#b5361f';
+    const shown = (l, mode) => mode === 'setup' ? Math.round(T * l.pct / 100) : l.troops;
+    const ourY = i => OY - FORMS[st.form].pos[i];
+    const portraitAt = (id, x, y, s) => TArt.portrait(GEN[id], ageOf(GEN[id]), FAC[GEN[id].home] ? FAC[GEN[id].home].color : '#777').replace('<svg viewBox', `<svg x="${x}" y="${y}" width="${s}" height="${s}" viewBox`);
+    const svgField = mode => {
+      const pts = LX.map((x, i) => `${x},${ourY(i) + 4}`);
+      const outline = st.form === 'hoen' ? `<ellipse cx="300" cy="${OY + 22}" rx="262" ry="66" class="bf-form"/>` : `<path d="M${pts[0]} L${pts[1]} L${pts[2]} M${pts[0]} L300,${OY + 70} L${pts[2]}" class="bf-form"/>`;
+      let s = `<svg class="bfsvg" viewBox="0 0 600 380" role="img" aria-label="戰場：上方是敵軍，下方是我軍"><rect class="bf-ground" width="600" height="380"/>${TArt.terrain(def.terrain, def.scene === 'river', def.n.length)}${TArt.camp(300, 34, foeCol, true, st.hq.foe)}${TArt.camp(300, 350, ourCol, false, st.hq.our)}${outline}`;
+      [0, 1, 2].forEach(i => {
+        const f = foe[i], l = our[i], x = LX[i], oy = ourY(i);
+        const adv = BEATS[l.type] === f.type ? 'adv' : BEATS[f.type] === l.type ? 'dis' : '';
+        const lb = l.broken || (mode === 'setup' && l.pct === 0);
+        s += `<g class="blk foe" data-i="${i}">${TArt.block(f.type, f.troops, unit, x, EY, foeCol, true, f.broken)}<text class="bf-num" x="${x}" y="${EY + 48}">${f.broken ? '潰走' : fmt(f.troops)}</text></g>`;
+        if (mode !== 'setup' && !f.broken) s += TArt.sign(f.known ? f.intent : 'unk', x - 58, EY - 22, true);
+        if (!f.broken && !lb) s += TArt.vsMark(adv, x, (EY + oy) / 2 + 12);
+        s += `<g class="blk our" data-i="${i}">${TArt.block(l.type, shown(l, mode), unit, x, oy, ourCol, false, lb)}<text class="bf-num" x="${x}" y="${oy + 48}">${l.broken ? '潰走' : lb ? '' : fmt(shown(l, mode))}</text></g>`;
+        if (l.g && !lb) s += portraitAt(l.g, x - 74, oy + 4, 28);
+        if (mode !== 'setup' && !l.broken) s += TArt.sign(l.order, x - 58, oy - 20, false);
+      });
+      return s + '</svg>';
     };
-    const field = mode => `<div class="bf">
-      <div class="bf-hq foe"><b>${esc(def.cmd)}</b><span>敵本陣士氣</span><span class="hqbar"><span style="width:${clamp(st.hq.foe, 0, 100)}%"></span></span><span class="num">${Math.max(0, Math.round(st.hq.foe))}</span></div>
-      <div class="bf-lanes">${[0, 1, 2].map(i => laneHtml(i, mode)).join('')}</div>
-      <div class="bf-hq our"><b>${esc(leaderName())}</b><span>本陣士氣</span><span class="hqbar"><span style="width:${clamp(st.hq.our, 0, 100)}%"></span></span><span class="num">${Math.max(0, Math.round(st.hq.our))}</span></div></div>`;
+    const legend = `<div class="ctr-legend" role="img" aria-label="兵種相剋：鐵砲克騎馬、騎馬克長槍、長槍克鐵砲">${TArt.unitIcon('gun')}<span>›</span>${TArt.unitIcon('cav')}<span>›</span>${TArt.unitIcon('spear')}<span>›</span>${TArt.unitIcon('gun')}</div>`;
+    const colSetup = i => {
+      const l = our[i];
+      return `<div class="col"><div class="col-h">${LANE[i]}</div>
+        <select class="ln-gen" data-i="${i}" aria-label="${LANE[i]}的大將"><option value="">無大將</option>${S.gens.map(g => `<option value="${g}" ${l.g === g ? 'selected' : ''}>${GEN[g].n}</option>`).join('')}</select>
+        <div class="uts">${['cav', 'spear', ...(canGun() ? ['gun'] : [])].map(ty => `<button class="ut ${l.type === ty ? 'on' : ''}" data-i="${i}" data-ty="${ty}" aria-label="${UT[ty].n}" title="${UT[ty].n}">${TArt.unitIcon(ty)}</button>`).join('')}</div>
+        <div class="pct"><button class="pm" data-i="${i}" data-d="-10" aria-label="減少${LANE[i]}兵力">−</button><span class="num">${l.pct}%</span><button class="pm" data-i="${i}" data-d="10" aria-label="增加${LANE[i]}兵力">＋</button></div></div>`;
+    };
 
     const setup = () => {
       const resPct = 100 - our.reduce((a, l) => a + l.pct, 0);
-      const ter = def.terrain === 'mountain' ? '這裡是山地：騎馬隊威力下降，固守的一方更有利。' : def.terrain === 'plain' ? '這裡是平原：騎馬隊威力上升。' : '';
-      openModal(`${head(yearLabel(S.year))}<div class="sheet-body"><div class="kicker">布陣</div><h2>${esc(def.n)}</h2>
-        <p class="fine">斥候已看清敵軍三路的兵種。用相剋克制他們：<b>鐵砲克騎馬・騎馬克長槍・長槍克鐵砲</b>。${ter}${canGun() ? '' : '（你還沒有鐵砲，可以在城下町或事件中取得。）'}</p>
-        <div class="forms" role="group" aria-label="陣形">${Object.entries(FORMS).map(([k, f]) => `<button class="form ${st.form === k ? 'on' : ''}" data-f="${k}">${f.n}</button>`).join('')}</div>
-        <p class="form-d"><b class="brush">${FORMS[st.form].n}之陣</b>：${FORMS[st.form].d}<br><span class="fine">${FORMS[st.form].hist}</span></p>
-        ${field('setup')}
-        <p class="bf-res">預備隊 <b class="num">${resPct}%</b>（約 ${fmt(T * resPct / 100)} 人）：戰鬥中可以投入任何一路。</p>
-        <div class="actions"><button class="btn btn-shu" id="bf-go">開戰</button></div></div>`, { quiet: true, keepScroll: true });
+      openModal(`<div class="sheet-body bf-body">
+        <div class="bf-head"><div><div class="kicker">布陣</div><h2>${esc(def.n)}</h2></div>${legend}</div>
+        <div class="forms" role="group" aria-label="陣形">${Object.entries(FORMS).map(([k, f]) => `<button class="form ${st.form === k ? 'on' : ''}" data-f="${k}" aria-label="${f.n}之陣">${TArt.formIcon(f.pos, k)}<span>${f.n}</span></button>`).join('')}</div>
+        <p class="form-d">${FORMS[st.form].n}・${FORMS[st.form].d}</p>
+        ${svgField('setup')}
+        <div class="bf-ctl3">${[0, 1, 2].map(colSetup).join('')}</div>
+        <div class="bf-foot"><span class="fine">預備隊 ${resPct}%${def.terrain === 'mountain' ? '・山地：騎馬不利' : def.terrain === 'plain' ? '・平原：騎馬有利' : ''}</span><button class="btn btn-shu" id="bf-go">開戰</button></div>
+        <details class="bf-help"><summary>怎麼布陣？</summary><p>三路各派大將、選兵種、分配兵力，剩下的兵力是預備隊。照相剋克制敵人：鐵砲克騎馬、騎馬克長槍、長槍克鐵砲（綠色▲代表有利）。</p><p class="fine">${FORMS[st.form].hist}</p></details>
+      </div>`, { quiet: true, keepScroll: true });
       document.querySelectorAll('#modal .form').forEach(b => b.onclick = () => { st.form = b.dataset.f; setup(); });
       document.querySelectorAll('#modal .ut').forEach(b => b.onclick = () => { our[+b.dataset.i].type = b.dataset.ty; setup(); });
       document.querySelectorAll('#modal .ln-gen').forEach(s => s.onchange = () => {
@@ -1027,23 +1039,32 @@
       return L;
     }
 
+    const colRound = i => {
+      const l = our[i];
+      if (l.broken) return `<div class="col"><div class="col-h">${LANE[i]}</div><span class="fine">潰走</span></div>`;
+      return `<div class="col"><div class="col-h">${LANE[i]}</div><div class="ords">${Object.keys(ORD).map(k => {
+        const dis = k === 'feint' && !(l.g && stat(l.g, 'c') >= 60);
+        return `<button class="ord ${l.order === k ? 'on' : ''}" data-i="${i}" data-o="${k}" ${dis ? 'disabled' : ''} title="${dis ? '誘敵需要智謀 60 以上的大將' : ORD[k]}"><svg viewBox="-16 -16 32 32" class="ord-ic" aria-hidden="true">${TArt.icon(k)}</svg><span>${ORD[k]}</span></button>`;
+      }).join('')}</div></div>`;
+    };
     const roundView = () => {
       const plans = planList();
       if (st.plan && !plans.some(p => p.key === st.plan)) st.plan = null;
       const roundText = def.roundText && def.roundText[Math.min(st.round, 3)];
       const cur = plans.find(p => p.key === st.plan);
-      openModal(`${head(`第${RNX[st.round]}回合`)}<div class="sheet-body"><div class="kicker">合戰・${FORMS[st.form].n}之陣${survive ? `・撐過 ${maxR} 回合` : `・最多 ${maxR} 回合`}</div>
-        <div class="rounds">${Array.from({ length: maxR }, (_, k) => k + 1).map(i => `<i class="${i < st.round ? 'done' : i === st.round ? 'on' : ''}">${RNX[i]}</i>`).join('')}</div>
-        ${roundText ? `<p class="story"><b class="brush">${esc(roundText)}</b></p>` : ''}
-        <p class="fine">軍令要點：敵軍<b>突擊</b>時，用<b>固守</b>或<b>誘敵</b>反制；敵軍<b>固守</b>或<b>射擊</b>時，<b>進攻</b>比較划算。意圖不明時，就看你的判斷了。</p>
-        ${field('round')}
+      const news = st.log.slice(st.logMark || 0);
+      openModal(`<div class="sheet-body bf-body">
+        <div class="bf-head"><div><div class="kicker">${esc(def.n)}・${FORMS[st.form].n}之陣</div><h2>第${RNX[st.round]}回合 <small class="fine">／ ${maxR}${survive ? '・撐過即勝' : ''}</small></h2></div>${legend}</div>
+        ${roundText ? `<p class="bf-say">${esc(roundText)}</p>` : ''}
+        ${svgField('round')}
+        <div class="bf-ctl3">${[0, 1, 2].map(colRound).join('')}</div>
         <div class="bf-ctl">
-          ${!st.resUsed && st.reserve > 0 ? `<div class="row"><span>預備隊 ${fmt(st.reserve)} 人：</span>${['不投入', ...LANE].map((n, k) => `<button class="rsv ${st.resTo === k - 1 ? 'on' : ''}" data-k="${k - 1}" ${k > 0 && our[k - 1].broken ? 'disabled' : ''}>${n}</button>`).join('')}</div>` : ''}
-          ${plans.length ? `<div class="row"><span>計策：</span>${plans.map(p => `<button class="plan ${st.plan === p.key ? 'on' : ''}" data-k="${p.key}">${esc(p.n)}${p.pct !== undefined ? ` <small class="num">${p.pct}%</small>` : ''}</button>`).join('')}</div><p class="fine">${cur ? esc(cur.d) : '每回合可以選一項計策，也可以不用。'}</p>` : ''}
+          ${!st.resUsed && st.reserve > 0 ? `<div class="row"><span class="rlbl">預備隊 ${fmt(st.reserve)}</span>${['保留', ...LANE].map((n, k) => `<button class="rsv ${st.resTo === k - 1 ? 'on' : ''}" data-k="${k - 1}" ${k > 0 && our[k - 1].broken ? 'disabled' : ''}>${n}</button>`).join('')}</div>` : ''}
+          ${plans.length ? `<div class="row"><span class="rlbl">計策</span>${plans.map(p => `<button class="plan ${st.plan === p.key ? 'on' : ''}" data-k="${p.key}" title="${esc(p.d)}">${esc(p.n)}${p.pct !== undefined ? ` <small class="num">${p.pct}%</small>` : ''}</button>`).join('')}</div>${cur ? `<p class="fine">${esc(cur.d)}</p>` : ''}` : ''}
         </div>
-        ${st.log.length ? `<div class="blog" id="blog">${st.log.slice(-14).map(l => `<p class="${l.c}">${esc(l.t)}</p>`).join('')}</div>` : ''}
-        <div class="actions">${!def.boss ? '<button class="btn" id="bf-retreat">撤退</button>' : ''}<button class="btn btn-shu" id="bf-go">下令</button></div></div>`, { quiet: true, keepScroll: true });
-      const bl = $('#blog'); if (bl) bl.scrollTop = bl.scrollHeight;
+        <div class="bf-foot">${news.length ? `<details class="bf-log"><summary>戰報</summary>${news.map(l => `<p class="${l.c}">${esc(l.t)}</p>`).join('')}</details>` : '<span></span>'}<div class="actions">${!def.boss ? '<button class="btn" id="bf-retreat">撤退</button>' : ''}<button class="btn btn-shu" id="bf-go">下令</button></div></div>
+        <details class="bf-help"><summary>怎麼下令？</summary><p>看敵軍旁的圖示：敵軍<b>突擊</b>時用固守或誘敵反制；敵軍<b>固守、射擊</b>時就進攻。問號代表意圖不明。擊潰兩路，或讓敵本陣士氣（陣幕下的紅條）歸零就能獲勝。</p></details>
+      </div>`, { quiet: true, keepScroll: true });
       document.querySelectorAll('#modal .ord').forEach(b => b.onclick = () => { our[+b.dataset.i].order = b.dataset.o; roundView(); });
       document.querySelectorAll('#modal .rsv').forEach(b => b.onclick = () => { st.resTo = +b.dataset.k; roundView(); });
       document.querySelectorAll('#modal .plan').forEach(b => b.onclick = () => { st.plan = st.plan === b.dataset.k ? null : b.dataset.k; roundView(); });
@@ -1051,22 +1072,24 @@
       $('#bf-go').onclick = exec;
       if (st.fx) {
         const f = st.fx; st.fx = null;
-        const svg = $('#modal .scene'), box = $('#modal .scene-box');
+        const svg = $('#modal .bfsvg');
         f.lanes.forEach((x, i) => {
-          const lane = document.querySelector(`#modal .lane[data-i="${i}"]`); if (!lane) return;
-          if (x.toFoe) { TFx.floatText(lane.querySelector('.ln-card.foe'), `-${fmt(x.toFoe)}`, ''); TFx.shake(lane.querySelector('.ln-card.foe'), 3); }
-          if (x.toUs) TFx.floatText(lane.querySelector('.ln-card.our'), `-${fmt(x.toUs)}`, 'bad');
+          if (x.order) TFx.clash(svg, i, { order: x.order, intent: x.intent, ourType: x.ourType, x: LX[i], oy: ourY(i), ey: EY });
+          setTimeout(() => {
+            if (!svg || !svg.isConnected) return;
+            if (x.toFoe) TFx.floatText(svg.querySelector(`.blk.foe[data-i="${i}"]`), `-${fmt(x.toFoe)}`, '');
+            if (x.toUs) TFx.floatText(svg.querySelector(`.blk.our[data-i="${i}"]`), `-${fmt(x.toUs)}`, 'bad');
+          }, TFx.ok() ? 380 : 0);
         });
-        if (f.hq) { TFx.floatText($('#modal .bf-hq.foe .hqbar'), `士氣 -${f.hq}`, ''); TFx.shake($('#modal .bf-hq.foe')); }
-        if (f.ourHq) TFx.floatText($('#modal .bf-hq.our .hqbar'), `士氣 -${f.ourHq}`, 'bad');
-        if (f.gun) TFx.volley(svg, true, 'gun'); else TFx.volley(svg, true, 'arrow');
-        if (f.charge) TFx.charge(svg, true);
-        if (f.plan === 'ok') TFx.flash(box, 'rgba(255,240,200,.6)');
-        if (f.plan === 'ng') TFx.flash(box, 'rgba(120,20,10,.35)');
+        if (f.hq) TFx.floatText(svg.querySelector('.hqcamp.foe'), `士氣 -${f.hq}`, '');
+        if (f.ourHq) TFx.floatText(svg.querySelector('.hqcamp.our'), `士氣 -${f.ourHq}`, 'bad');
+        if (f.plan === 'ok') TFx.flash($('#modal .bf-body'), 'rgba(255,240,200,.35)');
+        if (f.plan === 'ng') TFx.flash($('#modal .bf-body'), 'rgba(120,20,10,.25)');
       }
     };
 
     const exec = () => {
+      st.logMark = st.log.length;
       const plan = st.plan; st.plan = null;
       let atkMul = 1 + st.buff, lossMul = (FORMS[st.form].lossMul || 1) * (1 - Math.min(.5, bonus('def'))), hqHit = 0, noPenalty = false, gunMul = 1;
       const fx = { lanes: [{}, {}, {}] };
@@ -1144,7 +1167,7 @@
         const toUs = Math.round(Math.min(foeP * .17 * mx[1] * (.9 + rnd() * .2) * lossMul * (survive && bonus('siege') ? .8 : 1), l.t0 * (def.cap || .45) * Math.max(mx[1], .3)));
         f.troops = Math.max(0, f.troops - toFoe); l.troops = Math.max(0, l.troops - toUs);
         sumFoe += toFoe; sumUs += toUs;
-        fx.lanes[i] = { toFoe, toUs };
+        fx.lanes[i] = { toFoe, toUs, order: l.order, intent: f.intent, ourType: l.type };
         if (l.order === 'atk' && l.type === 'gun') fx.gun = true;
         if (l.order === 'atk' && l.type === 'cav') fx.charge = true;
         st.log.push({ c: toFoe >= toUs ? 'ok' : 'ng', t: `${LANE[i]}：我軍${ORD[l.order]}、敵軍${INTENT[f.intent]}——敵 -${fmt(toFoe)}，我 -${fmt(toUs)}。` });

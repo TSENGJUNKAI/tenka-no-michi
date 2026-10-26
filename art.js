@@ -301,5 +301,74 @@ window.TArt = (function () {
     return `<svg class="scene s-${type} season-${season} t-${time}" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${sky}<g class="sunl">${sun}</g><g class="lay3">${far}${caps}</g><g class="lay2">${mid}${fire ? extra : ''}</g><g class="lay1">${near}</g><g class="lay0">${fg}${!fire ? extra : ''}</g>${ptc ? particles(ptc, ptc === 'rain' ? 70 : 26, seed) : ''}</svg>`;
   }
 
-  return { crest, scene, portrait };
+  // ───────── 合戰圖：小兵、本陣、意圖與軍令圖示 ─────────
+  // 小兵（原點在腳下，約 14×28）
+  function fig(type, x, y, col, flag) {
+    const t = `translate(${x.toFixed(1)},${y.toFixed(1)})`;
+    const fl = flag ? `<path d="M-1,-15 L-3,-27" class="fig-l"/><rect x="-6" y="-28" width="4" height="6" style="fill:${col}"/>` : '';
+    if (type === 'cav') return `<g transform="${t}"><g class="fig"><ellipse cx="0" cy="-6" rx="7" ry="3.4"/><path d="M5,-8 L8,-14 L10.5,-13 L7.5,-5Z M8,-14 L13,-12 L12.5,-10.5 L9,-12Z M-7,-7 q-4,2 -4,6 q2,-3 4,-4Z"/><path d="M-2,-9 L2,-9 L1.5,-16 L-1,-16Z"/><circle cx=".2" cy="-17.5" r="1.9"/></g><path d="M-5,-4 L-6.5,1 M-2,-4 L-1,1 M3,-4 L5,1 M6,-5 L8,0 M-4,-12 L11,-25" class="fig-l"/>${fl}</g>`;
+    if (type === 'gun') return `<g transform="${t}"><g class="fig"><path d="M-4.5,-13 L4.5,-13 L0,-17Z"/><rect x="-2.5" y="-13" width="5" height="7"/><path d="M-3,-6 L3,-6 L5,-1 L-3,0Z"/></g><path d="M-1,-9 L8,-20" class="fig-l" stroke-width="1.6"/><circle cx="8.5" cy="-21" r="1.2" class="fig"/>${fl}</g>`;
+    return `<g transform="${t}"><g class="fig"><path d="M-4.5,-15 L4.5,-15 L0,-19Z"/><rect x="-2.5" y="-15" width="5" height="9"/></g><path d="M-1.5,-6 L-2.5,0 M1.5,-6 L2.5,0 M2.5,-4 L4.5,-30" class="fig-l"/><path d="M3.8,-30 L4.5,-34 L5.4,-30Z" class="fig"/>${fl}</g>`;
+  }
+  // 一整路部隊：人數越多畫越多小兵，潰走時倒在地上
+  function block(type, troops, unit, cx, cy, col, enemy, broken) {
+    if (broken) {
+      return `<g class="blk-broken">${[-24, 0, 22].map((dx, k) => `<g transform="translate(${cx + dx},${cy + 4}) rotate(${k % 2 ? 80 : -78})">${fig(type, 0, 0, col, false)}</g>`).join('')}<path d="M${cx + 40},${cy + 8} L${cx + 52},${cy - 10}" class="fig-l"/><rect x="${cx + 48}" y="${cy - 14}" width="9" height="7" style="fill:${col}" transform="rotate(30 ${cx + 52} ${cy - 10})" opacity=".7"/></g>`;
+    }
+    const n = Math.max(1, Math.min(15, Math.round(troops / unit)));
+    const rows = Math.ceil(n / 5);
+    let g = '';
+    for (let k = 0; k < n; k++) {
+      const r = Math.floor(k / 5), c = k % 5, inRow = r === rows - 1 ? n - 5 * (rows - 1) : 5;
+      const x = cx + (c - (inRow - 1) / 2) * 17, y = cy + (r - (rows - 1) / 2) * 19 + 10;
+      g += fig(type, x, y, col, (k + r) % 3 === 0);
+    }
+    const bx = cx + 52;
+    const ban = `<g class="nobori"><path d="M${bx},${cy + 22} L${bx},${cy - 30}" class="fig-l" stroke-width="1.6"/><rect x="${bx + 1}" y="${cy - 28}" width="13" height="30" style="fill:${col}"/><text x="${bx + 7.5}" y="${cy - 9}" class="ban-t">${{ cav: '騎', spear: '槍', gun: '砲' }[type]}</text></g>`;
+    return `<g class="blk-in">${g}</g>${ban}`;
+  }
+  // 本陣：陣幕、旗幟與士氣條
+  function camp(x, y, col, enemy, morale) {
+    const m = Math.max(0, Math.min(100, morale));
+    return `<g class="hqcamp ${enemy ? 'foe' : 'our'}">
+      <path d="M${x - 70},${y - 26} L${x - 70},${y + 10} M${x + 70},${y - 26} L${x + 70},${y + 10}" class="fig-l" stroke-width="1.6"/>
+      <rect x="${x - 70}" y="${y - 24}" width="10" height="16" style="fill:${col}"/><rect x="${x + 60}" y="${y - 24}" width="10" height="16" style="fill:${col}"/>
+      <rect x="${x - 56}" y="${y - 10}" width="112" height="20" class="maku"/>
+      <path d="M${x - 56},${y - 3} L${x + 56},${y - 3} M${x - 56},${y + 4} L${x + 56},${y + 4}" style="stroke:${col}" stroke-width="3"/>
+      <circle cx="${x}" cy="${y}" r="7" style="fill:${col}" class="camp-crest"/>
+      <rect x="${x - 56}" y="${y + 14}" width="112" height="5" class="hq-bg"/><rect x="${x - 56}" y="${y + 14}" width="${(112 * m / 100).toFixed(1)}" height="5" style="fill:${enemy ? 'var(--shu)' : 'var(--ink2)'}" class="hq-fill"/></g>`;
+  }
+  const ICON = {
+    charge: '<path d="M-9,-8 L0,0 L9,-8 M-9,0 L0,8 L9,0" class="ic" style="stroke:var(--shu)"/>',
+    atk: '<path d="M-9,8 L0,0 L9,8 M-9,0 L0,-8 L9,0" class="ic" style="stroke:var(--ink)"/>',
+    hold: '<path d="M-10,-7 L-10,8 M-3,-9 L-3,8 M4,-9 L4,8 M11,-7 L11,8 M-12,-2 L13,-2 M-12,4 L13,4" class="ic" style="stroke:var(--r2)"/>',
+    shoot: '<circle cx="-6" cy="2" r="5" style="fill:var(--kin)" opacity=".75"/><circle cx="2" cy="-3" r="6" style="fill:var(--kin)" opacity=".55"/><circle cx="9" cy="3" r="4" style="fill:var(--kin)" opacity=".75"/><path d="M-12,8 L4,-2" class="ic" style="stroke:var(--ink)"/>',
+    feint: '<path d="M8,-8 C-10,-10 -12,8 4,8" class="ic" style="stroke:var(--ok)"/><path d="M0,3 L5,8 L0,13" class="ic" style="stroke:var(--ok)"/>',
+    unk: '<circle r="10" class="ic-q"/><text y="5" class="ic-qt">？</text>'
+  };
+  const ILBL = { charge: '突擊', hold: '固守', shoot: '射擊', unk: '不明', atk: '進攻', feint: '誘敵' };
+  function sign(kind, x, y, label) {
+    return `<g class="sign s-${kind}" transform="translate(${x},${y})"><circle r="14" class="sign-bg"/>${ICON[kind]}${label ? `<text y="27" class="sign-t">${ILBL[kind]}</text>` : ''}</g>`;
+  }
+  function vsMark(adv, x, y) {
+    if (!adv) return '';
+    return `<g transform="translate(${x},${y})" class="vs-mark ${adv}"><circle r="9"/><path d="${adv === 'adv' ? 'M-4,3 L0,-4 L4,3Z' : 'M-4,-3 L0,4 L4,-3Z'}"/></g>`;
+  }
+  function terrain(ter, river, seed) {
+    const r = rng(seed + 5); let g = '';
+    for (let i = 0; i < 70; i++) { const x = r() * 600, y = 60 + r() * 270; g += `<path d="M${x.toFixed(0)},${y.toFixed(0)} l2,-5 M${(x + 3).toFixed(0)},${y.toFixed(0)} l1,-4" class="grass"/>`; }
+    if (ter === 'mountain') g += `<path d="M-10,380 L-10,90 Q30,60 60,110 Q80,150 50,220 Q20,300 40,380Z M610,380 L610,80 Q570,60 545,120 Q525,170 555,240 Q580,310 560,380Z" class="hill"/>`;
+    if (river) g += `<path d="M-10,182 C120,170 200,200 300,186 C400,172 480,204 610,188 L610,204 C480,220 400,190 300,204 C200,218 120,188 -10,198Z" class="bf-river"/>`;
+    return g;
+  }
+  function formIcon(pos, form) {
+    const xs = [7, 18, 29];
+    const dots = xs.map((x, i) => `<circle cx="${x}" cy="${(12 - pos[i] / 3).toFixed(1)}" r="3"/>`).join('');
+    return `<svg viewBox="0 0 36 24" class="form-ic" aria-hidden="true">${form === 'hoen' ? '<ellipse cx="18" cy="14" rx="15" ry="8" class="fi-l"/>' : `<path d="M${xs[0]},${(12 - pos[0] / 3).toFixed(1)} L${xs[1]},${(12 - pos[1] / 3).toFixed(1)} L${xs[2]},${(12 - pos[2] / 3).toFixed(1)}" class="fi-l"/>`}${dots}<rect x="15" y="19" width="6" height="4" class="fi-hq"/></svg>`;
+  }
+  function unitIcon(type) {
+    return `<svg viewBox="-10 -36 24 38" class="unit-ic" aria-hidden="true">${fig(type, 0, 0, 'var(--shu)', type !== 'cav')}</svg>`;
+  }
+
+  return { crest, scene, portrait, fig, block, camp, sign, vsMark, terrain, formIcon, unitIcon, icon: k => ICON[k] };
 })();

@@ -439,6 +439,73 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .geo.owned { border-color: var(--kin); }
 .geo small { grid-column: 1 / -1; font-size: .75rem; color: var(--kin); }
 
+/* 戰場圖 */
+.sheet-body.bf-body { position: relative; gap: 10px; }
+.bfsvg { width: 100%; max-width: 100%; aspect-ratio: 600 / 380; height: auto; display: block; border: 1px solid var(--line); border-radius: 2px; }
+.bf-ground { fill: color-mix(in srgb, var(--land) 72%, #6f8a45); }
+.grass { stroke: color-mix(in srgb, var(--ink) 22%, transparent); stroke-width: 1; fill: none; }
+.hill { fill: var(--m2); opacity: .55; }
+.bf-river { fill: var(--sea); opacity: .95; }
+.fig { fill: var(--ink); }
+.fig-l { stroke: var(--ink); stroke-width: 1.2; fill: none; stroke-linecap: round; }
+.blk-broken { opacity: .45; }
+.ban-t { font-family: var(--f-brush); font-size: 11px; fill: #fff8ec; text-anchor: middle; }
+.maku { fill: var(--paper); stroke: var(--line); }
+.hq-bg { fill: var(--line); }
+.camp-crest { stroke: var(--paper); stroke-width: 2; }
+.bf-form { fill: none; stroke: var(--ink2); stroke-width: 1.3; stroke-dasharray: 5 5; opacity: .5; }
+.bf-num { font-size: 13px; fill: var(--ink); text-anchor: middle; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--land); stroke-width: 3px; }
+.sign-bg { fill: var(--paper); stroke: var(--line); stroke-width: 1.2; }
+.sign .ic { fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.ic-q { fill: none; stroke: var(--ink3); stroke-width: 1.5; }
+.ic-qt { font-size: 13px; text-anchor: middle; fill: var(--ink3); font-family: var(--f-brush); }
+.sign-t { font-family: var(--f-brush); font-size: 12px; text-anchor: middle; fill: var(--ink); paint-order: stroke; stroke: var(--land); stroke-width: 3px; }
+.vs-mark circle { fill: var(--paper); stroke-width: 1.5; }
+.vs-mark.adv circle { stroke: var(--ok); }
+.vs-mark.adv path { fill: var(--ok); }
+.vs-mark.dis circle { stroke: var(--bad); }
+.vs-mark.dis path { fill: var(--bad); }
+.bfsvg .shot { fill: var(--ink); }
+.bfsvg .puff { fill: #e6dfd2; }
+.bfsvg .arrow { stroke: var(--ink); stroke-width: 1.3; }
+.bf-ctl3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.col { display: grid; gap: 5px; justify-items: center; align-content: start; min-width: 0; text-align: center; }
+.col-h { font-family: var(--f-brush); font-size: .88rem; color: var(--ink2); letter-spacing: .2em; }
+.col .ln-gen { max-width: 140px; }
+.ut { padding: 2px 5px; }
+.unit-ic { width: 20px; height: 30px; display: block; }
+.ord { display: grid; justify-items: center; padding: 3px 6px; font-size: .76rem; line-height: 1.15; }
+.ord-ic { width: 22px; height: 22px; }
+.ord-ic .ic { fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.ord.on .ord-ic .ic { stroke: var(--paper) !important; }
+.ords { flex-wrap: nowrap; justify-content: center; }
+.form { display: grid; justify-items: center; gap: 1px; padding: 4px 8px; font-size: .85rem; }
+.form-ic { width: 36px; height: 24px; }
+.form-ic circle { fill: currentColor; }
+.fi-l { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .6; }
+.fi-hq { fill: currentColor; opacity: .6; }
+.form-d { font-size: .86rem; margin: 0; color: var(--ink2); }
+.bf-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+.bf-head h2 { font-size: 1.45rem; }
+.bf-head h2 small { font-size: .8rem; }
+.ctr-legend { display: flex; align-items: center; gap: 1px; color: var(--ink3); font-size: .9rem; }
+.ctr-legend .unit-ic { width: 17px; height: 26px; }
+.bf-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bf-help, .bf-log { font-size: .85rem; color: var(--ink2); }
+.bf-help summary, .bf-log summary { cursor: pointer; font-family: var(--f-brush); }
+.bf-help p, .bf-log p { margin: 4px 0; }
+.bf-log .ok { color: var(--ok); }
+.bf-log .ng { color: var(--bad); }
+.bf-say { margin: 0; font-family: var(--f-brush); font-size: 1rem; }
+.rlbl { font-family: var(--f-brush); color: var(--ink2); }
+@media (max-width: 560px) {
+  .ord { padding: 2px 4px; font-size: .7rem; }
+  .ord-ic { width: 18px; height: 18px; }
+  .form { padding: 3px 5px; font-size: .78rem; }
+  .form-ic { width: 30px; height: 20px; }
+  .col .ln-gen { font-size: .74rem; }
+}
+
 /* 三路布陣戰場 */
 .bf { display: grid; gap: 8px; }
 .bf-hq { display: flex; align-items: center; gap: 8px; font-size: .85rem; padding: 6px 10px; border: 1px solid var(--line); background: var(--paper2); border-radius: 2px; flex-wrap: wrap; }
@@ -475,6 +542,8 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .ut, .ord, .form, .rsv, .plan, .pm { appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 3px 9px; cursor: pointer; font-family: var(--f-brush); border-radius: 2px; font-size: .92rem; line-height: 1.4; }
 .ut:hover, .ord:hover:not([disabled]), .form:hover, .rsv:hover:not([disabled]), .plan:hover, .pm:hover { border-color: var(--shu); }
 .ut.on, .ord.on, .form.on, .rsv.on, .plan.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.ut.on { background: var(--paper); border: 2px solid var(--shu); box-shadow: 0 0 0 2px color-mix(in srgb, var(--shu) 25%, transparent); }
+.bf-head .kicker { margin-bottom: 0; }
 .ord[disabled], .rsv[disabled] { opacity: .4; cursor: not-allowed; }
 .ln-gen { width: 100%; min-width: 0; font: inherit; font-size: .82rem; padding: 3px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 2px; }
 .pct { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: .8rem; }
@@ -554,11 +623,11 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 <div id="modal" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 
-<script src="map.js?v=3c"></script>
-<script src="data.js?v=3c"></script>
-<script src="art.js?v=3c"></script>
+<script src="map.js?v=4c"></script>
+<script src="data.js?v=4c"></script>
+<script src="art.js?v=4c"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="fx.js?v=3c"></script>
-<script src="game.js?v=3c"></script>
+<script src="fx.js?v=4c"></script>
+<script src="game.js?v=4c"></script>
 </body>
 </html>
