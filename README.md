@@ -20,6 +20,7 @@
 - **戰國圖鑑與年表**：遇過的武將、事件會永久收錄，年表依你經歷過的事件逐一點亮。
 - **美術與動畫**：每位武將都有依甲冑特徵繪製的肖像（伊達的新月、本多的鹿角、直江的「愛」字……）；情景插畫隨季節（春櫻、秋楓、冬雪）與時段變化；以 [GSAP](https://gsap.com/) 製作捲軸展開、章節標題、合戰特效與勝敗朱印。遊戲內可切換動畫開關。
 - **新手教學與對話**：第一次合戰有逐步引導；事件改成一句一句出現的對話，附說話者肖像。
+- **浮世繪**：主君肖像、歷史決戰與天下大事的插畫，換成江戶末期到明治時代的武者繪（歌川國芳、月岡芳年等），點圖可以放大；結局畫面會附上「後來的歷史」。圖鑑的「浮世繪」頁列出每幅圖的出處。
 - **音樂與音效**：以 Web Audio 即時合成古箏、太鼓、尺八（都節音階），不需要任何音檔。
 - 手繪令制國地圖，支援深色模式與手機。
 
@@ -42,7 +43,39 @@
 | `art.js` | 家紋、武將肖像與情景插畫 |
 | `fx.js` | 動畫效果（GSAP） |
 | `audio.js` | 背景音樂與音效（Web Audio 合成） |
+| `ukiyo.js` | 浮世繪目錄：出處、肖像裁切、對應的合戰與事件 |
+| `img/` | 浮世繪縮圖（公有領域） |
 | `game.js` | 遊戲流程、合戰、存檔與圖鑑 |
+
+## 圖片出處
+
+`img/` 裡的浮世繪都取自 [Wikimedia Commons](https://commons.wikimedia.org/)，標示為公有領域（Public domain）。為了讓遊戲載入快一點，都縮小成長邊 720–900 像素。
+
+| 作品 | 畫師 | 年代 | 原圖 |
+|---|---|---|---|
+| 太平記英勇傳　太田上總介平春永（織田信長） | 歌川國芳 | 1848–49 | [Commons](https://commons.wikimedia.org/wiki/File:Oda-Nobunaga-by-Utagawa-Kuniyoshi.png) |
+| 大日本名將鑑　德川家康 | 月岡芳年 | 1878 | [Commons](https://commons.wikimedia.org/wiki/File:Tokugawa_Ieyasu_-_Directories_of_Famous_Generals_of_Japan.jpg) |
+| 武田信玄 | 歌川國芳 | 1843–44 | [Commons](https://commons.wikimedia.org/wiki/File:Takeda_Shingen_%E6%AD%A6%E7%94%B0%E4%BF%A1%E7%8E%84_%28BM_2008,3037.15309%29.jpg) |
+| 芳年武者无類　上杉輝虎入道謙信 | 月岡芳年 | 1883 | [Commons](https://commons.wikimedia.org/wiki/File:Uesugi_Kenshin_Nyudo_Terutora_Riding_into_Battle_LACMA_M.2007.152.65.jpg) |
+| 太平記英勇傳　今川義元 | 歌川國芳 | 1848–50 | [Commons](https://commons.wikimedia.org/wiki/File:Imagawa-Yoshimoto-Ukiyo-e.jpg) |
+| 大日本六十餘將　土佐 長宗我部元親 | 歌川芳虎 | 1866 | [Commons](https://commons.wikimedia.org/wiki/File:Dai_Nihon_Rokuj%C5%AByosh%C5%8D,_Tosa_Ch%C5%8Dsokabe_Hata_no_Motochika_by_Yoshitora.jpg) |
+| 大日本名將鑑　毛利元就夜襲嚴島 | 月岡芳年 | 1880 | [Commons](https://commons.wikimedia.org/wiki/File:Mori_Motonari_Attacking_Sue_Harutaka_at_Itsukushima_LACMA_M.84.31.247.jpg) |
+| 山本勘助 | 歌川國芳 | 1845–46 | [Commons](https://commons.wikimedia.org/wiki/File:Yamamoto_Kansuke_%E5%B1%B1%E6%9C%AC%E5%8B%98%E5%8A%A9_%28BM_2008,3037.15510%29.jpg) |
+| 武田伊奈四郎勝賴 | 歌川國芳 | 1845–46 | [Commons](https://commons.wikimedia.org/wiki/File:Takeda_Inashiro_Katsuyori_%E6%AD%A6%E7%94%B0%E4%BC%8A%E5%A5%88%E5%9B%9B%E9%83%8E%E5%8B%9D%E9%A0%BC_%28BM_2008,3037.10502%29.jpg) |
+| 大日本名將鑑　加藤主計頭清正 | 月岡芳年 | 1878 | [Commons](https://commons.wikimedia.org/wiki/File:Kato_Kazuenokami_Kiyomasa_Kneeling_by_a_Banner_LACMA_M.84.31.269.jpg) |
+| 皇國二十四功　大久保彥左衛門救家康 | 月岡芳年 | 1881 | [Commons](https://commons.wikimedia.org/wiki/File:Okubo_Hikozaemon_Tadanori_Rescuing_Tokugawa_Ieyasu_LACMA_M.84.31.128.jpg) |
+| 桶狹間大合戰之圖 | 右田年英 | 明治後期 | [Commons](https://commons.wikimedia.org/wiki/File:Imagawa_Yoshimoto,_Okehazama_Daikassen_no_Zu_by_Toshihide.jpg) |
+| 武田上杉川中嶋大合戰之圖 | 歌川國芳 | 約 1845 | [Commons](https://commons.wikimedia.org/wiki/File:Takeda_Uesugi_Kawanakajima_o-kassen_no_zu_%E6%AD%A6%E7%94%B0%E4%B8%8A%E6%9D%89%E5%B7%9D%E4%B8%AD%E5%B6%8B%E5%A4%A7%E5%90%88%E6%88%A6%E3%81%AE%E5%9C%96_%28Takeda_and_Uesugi_at_the_Battle_of_Kawanakajima%29_%28BM_2008,3037.18311%29.jpg) |
+| 新撰太閤記　姉川大合戰 | 歌川豐宣 | 1883 | [Commons](https://commons.wikimedia.org/wiki/File:Utagawa-Toyonobu-Shinsen-Taikoki-17-c.jpg) |
+| 三方原之戰 | 歌川芳虎 | 1874 | [Commons](https://commons.wikimedia.org/wiki/File:Battle_of_Mikatagahara.jpg) |
+| 長篠合戰 | 歌川豐宣 | 1883 | [Commons](https://commons.wikimedia.org/wiki/File:%E9%95%B7%E7%AF%A0%E5%90%88%E6%88%B0_-_Nagashino_kassen_-_the_battle_of_Nagashino.jpg) |
+| 本能寺焰中的織田右大臣信長 | 月岡芳年 | 1878 | [Commons](https://commons.wikimedia.org/wiki/File:Oda_Udaijin_Taira_no_Nobunaga_in_Flames_at_the_Temple_Honnoji_LACMA_M.84.31.116.jpg) |
+| 信長在本能寺的烈火中奮戰 | 月岡芳年 | 1878 | [Commons](https://commons.wikimedia.org/wiki/File:Nobunaga_by_Yoshitoshi.jpg) |
+| 山崎合戰前的軍議 | 歌川貞秀 | 1863 | [Commons](https://commons.wikimedia.org/wiki/File:War_Council_Before_the_Battle_of_Yamazaki.jpg) |
+| 月百姿　山城小栗栖月 | 月岡芳年 | 1885–92 | [Commons](https://commons.wikimedia.org/wiki/File:Yoshitoshi_-_100_Aspects_of_the_Moon_-_19.jpg) |
+| 月百姿　志津嶽月 | 月岡芳年 | 1888 | [Commons](https://commons.wikimedia.org/wiki/File:Hideyoshi_en_de_maan_te_Shizugatake-Rijksmuseum_RP-P-1989-218.jpeg) |
+| 嚴島合戰 | 歌川貞秀 | 約 1850 | [Commons](https://commons.wikimedia.org/wiki/File:Battle_Itsukushima.jpg) |
+| 天目山 武田勝賴戰死 | 二代 歌川國輝 | 1861 | [Commons](https://commons.wikimedia.org/wiki/File:Utagawa_Kuniteru_II_-_The_Death_in_Battle_of_Katsuyori_on_Mount_Tenmoku.jpg) |
 
 ## 關於史實
 

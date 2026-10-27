@@ -182,7 +182,7 @@
 
   // ───────── 對話：一句一句出現，有說話者時顯示肖像 ─────────
   const LEADER_PT = { oda: ['L_oda', 1534], tokugawa: ['L_tokugawa', 1543], takeda: ['L_takeda', 1521], uesugi: ['L_uesugi', 1530], hojo: ['L_hojo', 1515], imagawa: ['L_imagawa', 1519], mori: ['L_mori', 1497], chosokabe: ['L_chosokabe', 1539] };
-  const leaderG = (fac = S.fac) => ({ id: LEADER_PT[fac][0], home: fac, b: LEADER_PT[fac][1] });
+  const leaderG = (fac = S.fac) => ({ id: LEADER_PT[fac][0], home: fac, b: LEADER_PT[fac][1], nm: fac === S.fac ? leaderName() : '' });
   function speakerOf(line) {
     const m = line.match(/^([^「：:，。！]{1,10}?)(?:衝了進來|稟報|說|回報|大喊|求見|跪在[^：:]*)?[：:]「/);
     if (!m) return null;
@@ -273,7 +273,8 @@
     const k = (Math.floor(y * 40) * 7 + type.length * 3) % 10;
     const time = type === 'night' ? 'night' : ['fire', 'tea', 'storm'].includes(type) ? 'day' : k < 7 ? 'day' : k < 9 ? 'dusk' : 'dawn';
     const o = Object.assign({ season: seasonIdx(y), time, seed: Math.floor(y * 4), our: S ? FAC[S.fac].color : undefined }, opt || {});
-    return `<div class="scene-box">${TArt.scene(type, o)}${place ? `<span class="place">${esc(place)}</span>` : ''}${year ? `<span class="yr">${esc(year)}</span>` : ''}</div>`;
+    const art = o.uk ? TUki.sceneHtml(o.uk, TArt.scene(type, o)) : TArt.scene(type, o);
+    return `<div class="scene-box${o.uk ? ' uk' : ''}">${art}${place ? `<span class="place">${esc(place)}</span>` : ''}${year ? `<span class="yr">${esc(year)}</span>` : ''}</div>`;
   }
   function provAt(loc) {
     if (!loc) return null;
@@ -285,7 +286,8 @@
   function ageOf(g) { return S ? Math.floor(S.year) - g.b : Math.min(45, Math.floor(g.d) - g.b); }
   function portrait(g, size) {
     const color = FAC[g.home] ? FAC[g.home].color : '#777';
-    return `<div class="face${size === true ? ' lg' : size ? ' ' + size : ''}">${TArt.portrait(g, ageOf(g), color)}</div>`;
+    const uk = TUki.faceKey(g);
+    return `<div class="face${size === true ? ' lg' : size ? ' ' + size : ''}${uk ? ' uk' : ''}">${uk ? TUki.faceHtml(uk) : TArt.portrait(g, ageOf(g), color)}</div>`;
   }
   const stars = r => '★'.repeat(r) + '<span style="opacity:.3">' + '★'.repeat(3 - r) + '</span>';
   const SKN = { atk: '強攻', amb: '奇襲', plot: '調略', gun: '鐵砲', def: '兵損', income: '收入', troops: '募兵', winpres: '勝利威望', wingold: '勝利金錢', loy: '忠誠', foresight: '看穿敵情', lowhp: '背水一戰', siege: '守城', escape: '撤退無損', risk: '謀反風險', tea: '茶道' };
@@ -325,7 +327,7 @@
               <span class="toggles"><button class="btn btn-sm btn-ghost" id="b-snd"></button><button class="btn btn-sm btn-ghost" id="b-anim"></button></span>
             </div>
             <p class="fine" id="anim-note"></p>
-            <p class="fine">史實說明依據通說整理；標註「傳說」「據說」者真偽未定。肉鴿模式中的武將會依真實年代登場與退場。</p>
+            <p class="fine">史實說明依據通說整理；標註「傳說」「據說」者真偽未定。肉鴿模式中的武將會依真實年代登場與退場。<a href="#" id="b-credit">浮世繪圖片出處</a></p>
           </div>
         </div>
         <div class="title-map"><svg id="tmap" role="img" aria-label="1560 年的日本勢力圖"></svg></div>
@@ -342,6 +344,7 @@
     $('#b-new').onclick = showSelect;
     if (save) $('#b-cont').onclick = () => { S = save; showRun(); resumeAfterLoad(); };
     $('#b-codex').onclick = () => showCodex(showTitle);
+    $('#b-credit').onclick = e => { e.preventDefault(); showCodex(showTitle, 'art'); };
   }
 
   function bindSoundToggle(btn, short) {
@@ -673,7 +676,7 @@
   function storyModal(o, next) {
     const lead = o.lead ? `<div class="talk-lead">${portrait(leaderG(), true)}<b class="brush">${esc(leaderName())}</b></div>` : '';
     if (o.scene === 'night' || o.scene === 'fire') TAudio.play('tense');
-    openModal(`${sceneHead(o.scene, o.place, o.year)}<div class="sheet-body">${o.kicker ? `<div class="kicker">${esc(o.kicker)}</div>` : ''}<h2>${esc(o.title)}</h2><div class="${lead ? 'with-lead' : ''}">${lead}<div class="talk" id="talk"></div></div>${o.fx ? fxHtml(o.fx) : ''}${histHtml(o.hist)}<div class="actions" id="talk-act" hidden><button class="btn btn-shu" id="m-ok">${esc(o.btn || '繼續')}</button></div></div>`);
+    openModal(`${sceneHead(o.scene, o.place, o.year, o.uk && { uk: o.uk })}<div class="sheet-body">${o.kicker ? `<div class="kicker">${esc(o.kicker)}</div>` : ''}<h2>${esc(o.title)}</h2><div class="${lead ? 'with-lead' : ''}">${lead}<div class="talk" id="talk"></div></div>${o.fx ? fxHtml(o.fx) : ''}${histHtml(o.hist)}<div class="actions" id="talk-act" hidden><button class="btn btn-shu" id="m-ok">${esc(o.btn || '繼續')}</button></div></div>`);
     talk($('#talk'), o.text, () => { $('#talk-act').hidden = false; $('#m-ok').focus(); });
     $('#m-ok').onclick = () => { TAudio.play('calm'); next(); };
   }
@@ -725,7 +728,7 @@
         if (!r) return next();
         seen('world', w.id);
         if (r.battle) { const def = B[r.battle]; return battleStep(def, { named: r.battle }, next); }
-        eventModal(Object.assign({ kicker: '天下大事', yearText: yearLabel(w.y) }, r), next);
+        eventModal(Object.assign({ kicker: '天下大事', yearText: yearLabel(w.y), uk: TUki.world(w.id) }, r), next);
       });
     });
     steps.unshift(next => { refresh(); next(); });
@@ -796,7 +799,7 @@
     const gens = shuffle(S.gens);
     const text = (e.text || '').replace('{g1}', gens[0] ? GEN[gens[0]].n : '某家臣').replace('{g2}', gens[1] ? GEN[gens[1]].n : '另一位家臣');
     const place = e.loc ? placeName(e.loc) : '';
-    const head = sceneHead(e.scene, place, e.yearText);
+    const head = sceneHead(e.scene, place, e.yearText, e.uk && { uk: e.uk });
     const pv = provAt(e.loc);
     const body = e.loc ? `<div class="with-mini"><div class="talk" id="talk"></div><div><div class="mini-map">${TMap.miniMap(e.loc[0], e.loc[1], pv.n)}</div><div class="now-line">今：${esc(pv.now)}</div></div></div>` : `<div class="talk" id="talk"></div>`;
     TAudio.play(e.scene === 'night' || e.scene === 'fire' ? 'tense' : 'calm');
@@ -926,6 +929,8 @@
     $('#m-skip').onclick = () => next();
   }
 
+  // 這一戰有沒有對應的浮世繪
+  const ukOf = def => TUki.battle(Object.keys(B).find(k => B[k] === def));
   // 決戰前的軍議：把金錢換成兵力，並預告這一戰的特殊戰術
   function councilModal(def, go) {
     let buys = 0;
@@ -935,7 +940,7 @@
         const ok = !sp.req || sp.req(G);
         return `<li>${ok ? '' : '🔒 '}<b class="brush">${esc(sp.n)}</b>：${esc(sp.d || '')}</li>`;
       }).join('');
-      openModal(`${sceneHead(def.scene, def.place, yearLabel(S.year))}<div class="sheet-body"><div class="kicker">軍議</div><h2>決戰前夜：${esc(def.n)}</h2>
+      openModal(`${sceneHead(def.scene, def.place, yearLabel(S.year), { uk: ukOf(def) })}<div class="sheet-body"><div class="kicker">軍議</div><h2>決戰前夜：${esc(def.n)}</h2>
         <p class="story">敵軍約 ${fmt(def.ft)} 人，由${esc(def.cmd)}率領。${def.local ? `這一戰你身邊只有約 ${def.local} 名隨從，大軍來不及趕到。` : `你目前有 ${fmt(S.troops)} 兵、${fmt(S.gold)} 金。`}\n這是一章的最後一戰，敗北就會結束這一局。</p>
         ${tips ? `<div class="fine">這一戰可用的特殊戰術：<ul style="margin:.3em 0 0;padding-left:1.2em">${tips}</ul></div>` : ''}
         <div class="choices">
@@ -1107,7 +1112,7 @@
     const maxR = survive ? 3 : 5;
     const foeColor = FAC[def.foe] ? FAC[def.foe].color : undefined;
     const placeTxt = def.place && def.loc && !def.target ? `${def.place}（今${provAt(def.loc).nowS}）` : (def.place || placeName(def.loc));
-    const head = label => sceneHead(def.scene, placeTxt, label, { foe: foeColor, seed: def.n.length });
+    const head = label => sceneHead(def.scene, placeTxt, label, { foe: foeColor, seed: def.n.length, uk: ukOf(def) });
     const types = (bid && BOSS_LANES[bid]) || shuffle(FPREF[def.foe] || FPREF.kokujin);
     const wts = [0, 1, 2].map(() => .3 + rnd() * .15), ws = wts.reduce((a, b) => a + b, 0);
     const resFrac = def.local ? 0 : .15;
@@ -1487,12 +1492,16 @@
     const big = kind === 'win' ? '改寫歷史' : kind === 'history' ? '如史實所載' : '家門滅亡';
     const text = kind === 'win' ? E.win : kind === 'history' ? E.history : (cause || '你的勢力滅亡了。');
     const years = Math.floor(S.year) - 1560;
+    const endUk = TUki.ending(fac, kind === 'win' ? 'win' : kind === 'history' ? 'history' : '');
+    const after = kind === 'win' || kind === 'history' ? TUki.after(fac) : [];
     screen().innerHTML = `<div class="page gutter"><div class="ending">
       <div class="fine">${FAC[fac].n}家・${esc(leaderName())}・${yearLabel(S.year)}（${Math.floor(S.year)}）</div>
       <div class="big ${kind === 'win' ? 'win' : ''}">${big}</div>
+      ${endUk ? `<figure class="end-uk"><img src="img/${endUk}.jpg" alt="${esc(TUki.cap(endUk))}" data-uk="${endUk}"><figcaption>${esc(TUki.cap(endUk))}</figcaption></figure>` : ''}
       <p class="story">${esc(text)}</p>
       <div class="estats num"><div><b>${years}</b><small>年</small></div><div><b>${provCount()}</b><small>領地（國）</small></div><div><b>${S.stats.wins}/${S.stats.battles}</b><small>合戰勝場</small></div><div><b>${S.gens.length + S.dead.filter(d => GEN[d]).length}</b><small>麾下武將</small></div></div>
       ${histHtml(E.hist)}
+      ${after.length ? `<div class="end-after"><div class="fine">後來的歷史</div><div class="uk-row">${after.map(k => `<figure><img src="img/${k}.jpg" alt="${esc(TUki.cap(k))}" data-uk="${k}" loading="lazy"><figcaption>${esc(TUki.ART[k].t)}</figcaption></figure>`).join('')}</div></div>` : ''}
       ${unlocks.map(u => `<div class="unlock">🔓 ${esc(u)}</div>`).join('')}
       <div class="actions" style="justify-content:flex-start"><button class="btn btn-shu" id="e-new">再戰一局</button><button class="btn" id="e-cdx">戰國圖鑑</button><button class="btn btn-ghost" id="e-title">回到標題</button></div>
     </div></div>`;
@@ -1502,8 +1511,8 @@
   }
 
   // ───────── 圖鑑 ─────────
-  function showCodex(back) {
-    let tab = 'gens';
+  function showCodex(back, tab0) {
+    let tab = tab0 || 'gens';
     const draw = () => {
       let body = '';
       if (tab === 'gens') {
@@ -1524,6 +1533,8 @@
       } else if (tab === 'ev') {
         const all = EVENTS.filter(e => META.seen.ev.includes(e.id));
         body = all.length ? `<div class="cgrid">${all.map(e => `<div class="centry"><h4>${esc(e.t)}</h4><p>${esc(e.hist)}</p></div>`).join('')}</div>` : '<p class="fine">還沒有遇到任何事件。</p>';
+      } else if (tab === 'art') {
+        body = TUki.galleryHtml();
       } else {
         const items = [];
         WORLD.forEach(w => items.push({ y: w.y, id: w.id, k: 'world', t: worldTitle(w) }));
@@ -1536,7 +1547,7 @@
       }
       screen().innerHTML = `<div class="page gutter"><div class="page-in">
         <div class="page-head"><h2>戰國圖鑑</h2><button class="btn btn-sm" id="c-back">← 返回</button></div>
-        <div class="ctabs">${[['gens', '武將'], ['treas', '名物'], ['syn', '羈絆'], ['ev', '事件'], ['geo', '地理'], ['tl', '年表']].map(([k, n]) => `<button class="${tab === k ? 'on' : ''}" data-t="${k}">${n}</button>`).join('')}</div>
+        <div class="ctabs">${[['gens', '武將'], ['treas', '名物'], ['syn', '羈絆'], ['ev', '事件'], ['geo', '地理'], ['tl', '年表'], ['art', '浮世繪']].map(([k, n]) => `<button class="${tab === k ? 'on' : ''}" data-t="${k}">${n}</button>`).join('')}</div>
         ${body}</div></div>`;
       document.querySelectorAll('.ctabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
       $('#c-back').onclick = back;

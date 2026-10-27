@@ -667,6 +667,35 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 @media (min-width: 761px) and (max-width: 1100px) { .tabs button[data-t="route"], .tabs button[data-t="map"] { display: none; } .tabs button[data-t="camp"] { flex: none; padding-inline: 24px; margin-left: auto; } }
 @media (prefers-reduced-motion: reduce) { :root:not(.anim-on) *, :root:not(.anim-on) *::before, :root:not(.anim-on) *::after { animation: none !important; transition: none !important; } }
 :root.anim-off *, :root.anim-off *::before, :root.anim-off *::after { animation: none !important; transition: none !important; }
+
+/* ───── 浮世繪 ───── */
+.face.uk { background: var(--paper2); }
+.ukf { position: absolute; inset: 0; background-repeat: no-repeat; filter: sepia(.12) saturate(.95); }
+.scene-box.uk { background: #2a241c; }
+.scene-box .uk-wide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; filter: sepia(.15) contrast(1.02); }
+.scene-box .uk-veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20,16,12,.15), rgba(20,16,12,.55) 50%, rgba(20,16,12,.15)); pointer-events: none; }
+.scene-box .uk-print { position: absolute; top: 6%; bottom: 6%; left: 50%; transform: translateX(-50%) rotate(-1deg); height: 88%; width: auto; max-width: 70%; object-fit: contain; background: #f2e8d2; padding: 5px; box-shadow: 0 6px 22px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.25); cursor: zoom-in; filter: sepia(.12); }
+.scene-box .uk-cap { position: absolute; right: 8px; bottom: 6px; max-width: 46%; font-size: .62rem; line-height: 1.3; color: #f3ead6; background: rgba(20,16,12,.6); padding: 2px 6px; border-radius: 2px; text-align: right; pointer-events: none; }
+.scene-box.uk .place { z-index: 1; }
+.end-uk { margin: 0; justify-self: center; display: grid; gap: 6px; justify-items: center; }
+.end-uk img { max-height: 46vh; max-width: 100%; width: auto; background: #f2e8d2; padding: 6px; box-shadow: 0 8px 26px rgba(0,0,0,.3); cursor: zoom-in; }
+.end-uk figcaption, .uk-row figcaption { font-size: .75rem; color: var(--ink3); text-align: center; }
+.uk-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 6px; }
+.uk-row figure { margin: 0; display: grid; gap: 4px; }
+.uk-row img { width: 100%; height: 190px; object-fit: cover; object-position: 50% 30%; border: 1px solid var(--line); cursor: zoom-in; }
+.uk-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+.uk-item { margin: 0; background: var(--paper); border: 1px solid var(--line); padding: 10px; display: grid; gap: 8px; align-content: start; }
+.uk-item img { width: 100%; height: 240px; object-fit: contain; background: var(--paper2); cursor: zoom-in; }
+.uk-item figcaption { display: grid; gap: 2px; font-size: .78rem; color: var(--ink2); }
+.uk-item figcaption b { color: var(--ink); font-size: .85rem; }
+.uk-item a, .uk-lb a { color: var(--shu); }
+.uk-lb { position: fixed; inset: 0; z-index: 200; background: rgba(12,10,8,.86); display: grid; place-items: center; padding: 16px; cursor: zoom-out; }
+.uk-lb figure { margin: 0; display: grid; gap: 10px; justify-items: center; max-width: 100%; }
+.uk-lb img { max-width: min(100%, 1000px); max-height: 78vh; background: #f2e8d2; padding: 6px; }
+.uk-lb figcaption { display: grid; gap: 2px; text-align: center; color: #efe6d2; font-size: .85rem; }
+.uk-lb figcaption b { font-size: 1.1rem; }
+.uk-lb .btn { position: absolute; top: 14px; right: 14px; }
+@media (max-width: 560px) { .scene-box .uk-cap { display: none; } .uk-row img { height: 150px; } }
 </style>
 </head>
 <body>
@@ -676,12 +705,13 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 <div id="modal" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 
-<script src="map.js?v=7f"></script>
-<script src="data.js?v=7f"></script>
-<script src="art.js?v=7f"></script>
+<script src="map.js?v=8a"></script>
+<script src="data.js?v=8a"></script>
+<script src="art.js?v=8a"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="fx.js?v=7f"></script>
-<script src="audio.js?v=7f"></script>
-<script src="game.js?v=7f"></script>
+<script src="fx.js?v=8a"></script>
+<script src="audio.js?v=8a"></script>
+<script src="ukiyo.js?v=8a"></script>
+<script src="game.js?v=8a"></script>
 </body>
 </html>
