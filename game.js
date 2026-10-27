@@ -883,14 +883,19 @@
 
   // ───────── 事件 ─────────
   function randomEvent(next) {
-    const list = EVENTS.filter(e => !S.evDone.includes(e.id) && (!e.y || (S.year >= e.y[0] && S.year <= e.y[1])) && (!e.facs || e.facs.includes(S.fac)) && (!e.need || e.need(G)));
-    const e = list.length ? pick(list) : pick(EVENTS.filter(x => !x.facs && !x.need && !x.y));
+    const list = EVENTS.filter(e => !S.evDone.includes(e.id) && (!e.y || (S.year >= e.y[0] && S.year <= e.y[1])) && (!e.facs || e.facs.includes(S.fac))
+      && (!e.who || S.gens.includes(e.who)) && (!e.after || S.evDone.includes(e.after)) && (!e.need || e.need(G)));
+    // 家臣的故事、本家的故事、還沒看過的故事比較容易出現，讓每一局都不太一樣
+    const wt = e => (e.who ? 4 : e.facs ? 2.5 : 1) * (META.seen.ev.includes(e.id) ? 1 : 1.6);
+    const pickW = l => { let t = l.reduce((a, e) => a + wt(e), 0) * rnd(); for (const e of l) { t -= wt(e); if (t <= 0) return e; } return l[l.length - 1]; };
+    const e = list.length ? pickW(list) : pick(EVENTS.filter(x => !x.facs && !x.need && !x.y && !x.who && !x.after));
     S.evDone.push(e.id); S.stats.events++; seen('ev', e.id);
-    eventModal(Object.assign({ kicker: '事件', yearText: yearLabel(S.year) }, e), next);
+    eventModal(Object.assign({ kicker: e.who ? `${GEN[e.who].n}的故事` : e.facs && e.facs.length === 1 ? `${FAC[S.fac].n}家的故事` : '事件', yearText: yearLabel(S.year) }, e), next);
   }
   function eventModal(e, next) {
-    const gens = shuffle(S.gens);
-    const text = (e.text || '').replace('{g1}', gens[0] ? GEN[gens[0]].n : '某家臣').replace('{g2}', gens[1] ? GEN[gens[1]].n : '另一位家臣');
+    const gens = e.who && S.gens.includes(e.who) ? [e.who, ...shuffle(S.gens.filter(x => x !== e.who))] : shuffle(S.gens);
+    const sub = t => (t || '').replace(/\{g\}/g, e.who ? GEN[e.who].n : '');
+    const text = sub(e.text).replace('{g1}', gens[0] ? GEN[gens[0]].n : '某家臣').replace('{g2}', gens[1] ? GEN[gens[1]].n : '另一位家臣');
     const place = e.loc ? placeName(e.loc) : '';
     const head = sceneHead(e.scene, place, e.yearText, e.uk && { uk: e.uk });
     const pv = provAt(e.loc);
@@ -910,7 +915,7 @@
       if (c.need && !c.need(G)) { dis = 1; why = '條件不符'; }
       if (c.tag === 'betray' && S.fac === 'uesugi') { dis = 1; why = '義：上杉家不做這種事'; }
       const pv = c.p !== undefined ? `成功率 ${Math.round((typeof c.p === 'function' ? c.p(G) : c.p) * 100)}%` : effPreview(c.eff);
-      return `<button class="choice" data-i="${i}" ${dis ? 'disabled' : ''}><b>${esc(c.t)}</b><small>${esc(why || pv || '　')}</small></button>`;
+      return `<button class="choice" data-i="${i}" ${dis ? 'disabled' : ''}><b>${esc(sub(c.t))}</b><small>${esc(why || pv || '　')}</small></button>`;
     }).join('');
     openModal(`${head}<div class="sheet-body"><div class="kicker">${esc(e.kicker)}</div><h2>${esc(e.t)}</h2>${body}<div class="choices" id="talk-act" hidden>${chs}</div></div>`);
     talk($('#talk'), text, () => { $('#talk-act').hidden = false; });
@@ -920,9 +925,9 @@
       if (c.p !== undefined) { const p = typeof c.p === 'function' ? c.p(G) : c.p; res = rnd() < p ? c.ok : c.ng; }
       const fx = applyEff(res.eff);
       if (S.fac === 'tokugawa' && /忍耐|隱忍/.test(c.t)) S.gauge = clamp(S.gauge + 5, 0, 100);
-      if (gens[0]) { gainMerit(gens[0], 1); fx.push({ t: `${GEN[gens[0]].n} 功勳 +1`, c: 'up' }); }
+      if (gens[0]) { const n = e.who === gens[0] ? 2 : 1; gainMerit(gens[0], n); fx.push({ t: `${GEN[gens[0]].n} 功勳 +${n}`, c: 'up' }); }
       refresh();
-      openModal(`${head}<div class="sheet-body"><div class="kicker">${esc(e.kicker)}</div><h2>${esc(e.t)}</h2><p class="story"><b class="brush">▸ ${esc(c.t)}</b><br>${esc(res.r || '')}</p>${fxHtml(fx)}${histHtml(e.hist)}<div class="actions"><button class="btn btn-shu" id="m-ok">繼續</button></div></div>`);
+      openModal(`${head}<div class="sheet-body"><div class="kicker">${esc(e.kicker)}</div><h2>${esc(e.t)}</h2><p class="story"><b class="brush">▸ ${esc(sub(c.t))}</b><br>${esc(sub(res.r))}</p>${fxHtml(fx)}${histHtml(e.hist)}<div class="actions"><button class="btn btn-shu" id="m-ok">繼續</button></div></div>`);
       $('#m-ok').focus(); $('#m-ok').onclick = () => next();
     });
   }
