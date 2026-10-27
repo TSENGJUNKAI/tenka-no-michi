@@ -104,29 +104,34 @@ window.TFx = (function () {
   function clash(svg, i, o) {
     if (!ok() || !svg) return;
     const our = svg.querySelector(`.blk.our[data-i="${i}"] .blk-in`), foe = svg.querySelector(`.blk.foe[data-i="${i}"] .blk-in`);
-    const oy = o.order === 'atk' ? -34 : o.order === 'feint' ? 20 : -6;
-    const fy = o.intent === 'charge' ? (o.order === 'feint' ? 46 : 30) : o.intent === 'shoot' ? 0 : 6;
-    if (our) g().fromTo(our, { y: 0 }, { y: oy, duration: .38, yoyo: true, repeat: 1, ease: 'power2.inOut' });
-    if (foe) g().fromTo(foe, { y: 0 }, { y: fy, duration: .38, yoyo: true, repeat: 1, ease: 'power2.inOut', delay: .06 });
+    const ox = o.order === 'atk' ? 40 : o.order === 'feint' ? -24 : 6;
+    const fx = o.intent === 'charge' ? (o.order === 'feint' ? -54 : -36) : o.intent === 'shoot' ? 0 : -6;
+    if (our) g().fromTo(our, { x: 0 }, { x: ox, duration: .38, yoyo: true, repeat: 1, ease: 'power2.inOut' });
+    if (foe) g().fromTo(foe, { x: 0 }, { x: fx, duration: .38, yoyo: true, repeat: 1, ease: 'power2.inOut', delay: .06 });
     const ns = 'http://www.w3.org/2000/svg';
-    const shoot = (fromY, toY, kind) => {
+    const shoot = (fromX, toX, kind) => {
       for (let k = 0; k < 7; k++) {
-        const x = o.x - 30 + Math.random() * 60;
+        const y = o.y - 28 + Math.random() * 44;
         const el = document.createElementNS(ns, kind === 'gun' ? 'circle' : 'line');
-        if (kind === 'gun') { el.setAttribute('r', '1.8'); el.setAttribute('cx', x); el.setAttribute('cy', fromY); el.setAttribute('class', 'shot'); }
-        else { el.setAttribute('x1', x); el.setAttribute('y1', fromY); el.setAttribute('x2', x); el.setAttribute('y2', fromY + (toY > fromY ? 10 : -10)); el.setAttribute('class', 'arrow'); }
+        if (kind === 'gun') { el.setAttribute('r', '1.8'); el.setAttribute('cx', fromX); el.setAttribute('cy', y); el.setAttribute('class', 'shot'); }
+        else { el.setAttribute('x1', fromX); el.setAttribute('y1', y); el.setAttribute('x2', fromX + (toX > fromX ? 12 : -12)); el.setAttribute('y2', y - 2); el.setAttribute('class', 'arrow'); }
         svg.appendChild(el);
-        g().fromTo(el, { y: 0, opacity: 1 }, { y: toY - fromY, opacity: 0, duration: kind === 'gun' ? .3 : .6, delay: Math.random() * .3, ease: 'none', onComplete: () => el.remove() });
+        g().fromTo(el, { x: 0, opacity: 1 }, { x: toX - fromX, y: kind === 'gun' ? 0 : 6, opacity: 0, duration: kind === 'gun' ? .3 : .6, delay: Math.random() * .3, ease: 'none', onComplete: () => el.remove() });
         if (kind === 'gun') {
           const p = document.createElementNS(ns, 'circle');
-          p.setAttribute('cx', x); p.setAttribute('cy', fromY); p.setAttribute('r', '5'); p.setAttribute('class', 'puff');
+          p.setAttribute('cx', fromX); p.setAttribute('cy', y); p.setAttribute('r', '5'); p.setAttribute('class', 'puff');
           svg.appendChild(p);
           g().fromTo(p, { scale: .3, opacity: .8, transformOrigin: 'center' }, { scale: 2.2, opacity: 0, duration: .9, onComplete: () => p.remove() });
         }
       }
     };
-    if (o.ourType === 'gun' || o.order !== 'atk') shoot(o.oy - 20, o.ey + 10, o.ourType === 'gun' ? 'gun' : 'arrow');
-    if (o.intent === 'shoot') shoot(o.ey + 10, o.oy - 10, 'gun');
+    if (o.ourType === 'gun' || o.order !== 'atk') shoot(o.ox + 40, o.ex - 20, o.ourType === 'gun' ? 'gun' : 'arrow');
+    if (o.intent === 'shoot') shoot(o.ex - 40, o.ox + 20, 'gun');
+  }
+  // 換陣形：部隊從舊位置滑到新位置
+  function slide(el, dx, dy) {
+    if (!ok() || !el || (!dx && !dy)) return;
+    g().from(el, { x: dx, y: dy, duration: .6, ease: 'power3.out' });
   }
   function charge(svg, our) {
     if (!ok() || !svg) return;
@@ -179,5 +184,5 @@ window.TFx = (function () {
     g().from(nodes, { opacity: 0, y: 14, duration: .4, stagger: .04, ease: 'power2.out', clearProps: 'all' });
   }
 
-  return { ok, motion, reduce, getMode: () => mode, setMode, modalIn, contentSwap, sceneIn, chapterCard, floatText, shake, flash, volley, clash, charge, stamp, capture, travel, countUp, pop, titleIntro, stagger };
+  return { ok, motion, reduce, getMode: () => mode, setMode, modalIn, contentSwap, sceneIn, chapterCard, floatText, shake, flash, volley, clash, slide, charge, stamp, capture, travel, countUp, pop, titleIntro, stagger };
 })();

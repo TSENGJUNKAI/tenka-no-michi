@@ -372,41 +372,45 @@ window.TArt = (function () {
       <circle cx="8.6" cy="-19.5" r="1.3" fill="${SKIN}"/><circle cx="8.8" cy="-22.5" r="1.2" fill="${SKIN}"/>
       ${head(0, -31)}${jingasa(0, -32)}</g>`;
   }
-  // 一整路部隊：人數越多畫越多小兵，後排小、前排大；潰走時倒在地上
+  // 一整路部隊（左右對陣）：三列橫隊，人數越多排越多縱深；前排朝向敵軍、遠處（上方）的小兵畫小一點；潰走時倒在地上
   function block(type, troops, unit, cx, cy, col, enemy, broken) {
     const jit = k => (Math.abs(Math.sin(k * 12.9898 + cx * .7) * 43758.5453) % 1) - .5;
+    const dir = enemy ? -1 : 1;
     if (broken) {
-      return `<g class="blk-broken">${[-28, -4, 20].map((dx, k) => `<g transform="translate(${cx + dx},${cy + 14}) rotate(${k % 2 ? 84 : -80})">${fig(type, 0, 0, col, false, { s: .62, v: k })}</g>`).join('')}<path d="M${cx + 42},${cy + 16} L${cx + 56},${cy - 4}" stroke="${SHAFT}" stroke-width="1.4"/><rect x="${cx + 52}" y="${cy - 10}" width="12" height="9" style="fill:${col}" transform="rotate(32 ${cx + 56} ${cy - 4})" opacity=".75"/></g>`;
+      return `<g class="blk-broken">${[-28, -4, 20].map((dx, k) => `<g transform="translate(${cx + dx},${cy + 14 + (k - 1) * 10}) rotate(${k % 2 ? 84 : -80})">${fig(type, 0, 0, col, false, { s: .62, v: k })}</g>`).join('')}<path d="M${cx - dir * 42},${cy + 26} L${cx - dir * 56},${cy + 6}" stroke="${SHAFT}" stroke-width="1.4"/></g>`;
     }
-    const cols = type === 'cav' ? 3 : 4, dx = type === 'cav' ? 30 : 22;
-    const n = Math.max(1, Math.min(cols * 3, Math.round(troops / unit)));
-    const rows = Math.ceil(n / cols);
-    let g = '';
+    const files = 3, dx = type === 'cav' ? 30 : 21;
+    const n = Math.max(1, Math.min(type === 'cav' ? 9 : 12, Math.round(troops / unit)));
+    const ranks = Math.ceil(n / files);
+    const figs = [];
     for (let k = 0; k < n; k++) {
-      const r = Math.floor(k / cols), c = k % cols, inRow = r === rows - 1 ? n - cols * (rows - 1) : cols;
-      const depth = rows > 1 ? r / (rows - 1) : 1;
-      const sc = .78 * (.86 + .14 * depth);
-      const x = cx + (c - (inRow - 1) / 2) * dx + jit(k) * 5 - (type === 'cav' ? 4 : 0), y = cy + (r - (rows - 1) / 2) * 18 + 16 + jit(k + 7) * 3;
-      g += fig(type, x, y, col, (k + r) % 2 === 0, { s: sc, flip: enemy, v: k + r });
+      const r = Math.floor(k / files), f = k % files;
+      const x = cx + dir * ((ranks - 1) / 2 - r) * dx + jit(k) * 4, y = cy + (f - 1) * 19 + 14 + jit(k + 7) * 3;
+      figs.push([y, fig(type, x, y, col, (k + r) % 2 === 0, { s: .76 * (.86 + .07 * f), flip: enemy, v: k + r })]);
     }
-    const bx = cx + 54;
-    const ban = `<g class="nobori"><path d="M${bx},${cy + 26} L${bx},${cy - 34}" stroke="${SHAFT}" stroke-width="1.8"/><path d="M${bx},${cy - 32} h15" stroke="${SHAFT}" stroke-width="1.2"/><rect x="${bx + 1}" y="${cy - 31}" width="14" height="38" style="fill:${col}" class="ol"/><circle cx="${bx + 8}" cy="${cy - 23}" r="4.2" fill="#fff8ec" opacity=".9"/><text x="${bx + 8}" y="${cy - 4}" class="ban-t">${{ cav: '騎', spear: '槍', gun: '砲' }[type]}</text></g>`;
-    return `<g class="blk-in">${g}</g>${ban}`;
+    figs.sort((a, b) => a[0] - b[0]);
+    const half = (ranks - 1) * dx / 2 + (type === 'cav' ? 20 : 12);
+    const bx = enemy ? cx + half + 6 : cx - half - 20;
+    const ban = `<g class="nobori"><path d="M${bx},${cy + 24} L${bx},${cy - 40}" stroke="${SHAFT}" stroke-width="1.8"/><path d="M${bx},${cy - 38} h15" stroke="${SHAFT}" stroke-width="1.2"/><rect x="${bx + 1}" y="${cy - 37}" width="14" height="38" style="fill:${col}" class="ol"/><circle cx="${bx + 8}" cy="${cy - 29}" r="4.2" fill="#fff8ec" opacity=".9"/><text x="${bx + 8}" y="${cy - 10}" class="ban-t">${{ cav: '騎', spear: '槍', gun: '砲' }[type]}</text></g>`;
+    return `${ban}<g class="blk-in">${figs.map(f => f[1]).join('')}</g>`;
   }
+  // 部隊在畫面上的半寬（排版用）
+  const blockHalf = (type, troops, unit) => { const n = Math.max(1, Math.min(type === 'cav' ? 9 : 12, Math.round(troops / unit))); return (Math.ceil(n / 3) - 1) * (type === 'cav' ? 30 : 21) / 2 + (type === 'cav' ? 20 : 12); };
   // 本陣：陣幕、旗幟與士氣條
   function camp(x, y, col, enemy, morale) {
-    const m = Math.max(0, Math.min(100, morale));
+    const m = Math.max(0, Math.min(100, morale)), fl = enemy ? 1 : -1;
     return `<g class="hqcamp ${enemy ? 'foe' : 'our'}">
-      <path d="M${x - 70},${y - 26} L${x - 70},${y + 10} M${x + 70},${y - 26} L${x + 70},${y + 10}" class="fig-l" stroke-width="1.6"/>
-      <rect x="${x - 70}" y="${y - 24}" width="10" height="16" style="fill:${col}"/><rect x="${x + 60}" y="${y - 24}" width="10" height="16" style="fill:${col}"/>
-      <rect x="${x - 56}" y="${y - 10}" width="112" height="20" class="maku"/>
-      <path d="M${x - 56},${y - 3} L${x + 56},${y - 3} M${x - 56},${y + 4} L${x + 56},${y + 4}" style="stroke:${col}" stroke-width="3"/>
-      <circle cx="${x}" cy="${y}" r="7" style="fill:${col}" class="camp-crest"/>
-      <rect x="${x - 56}" y="${y + 14}" width="112" height="5" class="hq-bg"/><rect x="${x - 56}" y="${y + 14}" width="${(112 * m / 100).toFixed(1)}" height="5" style="fill:${enemy ? 'var(--shu)' : 'var(--ink2)'}" class="hq-fill"/></g>`;
+      <path d="M${x - 14},${y - 40} L${x - 14},${y - 74} M${x + 14},${y - 40} L${x + 14},${y - 74}" class="fig-l" stroke-width="1.6"/>
+      <rect x="${x - 14 + (fl < 0 ? -12 : 0)}" y="${y - 74}" width="12" height="20" style="fill:${col}"/><rect x="${x + 14 + (fl < 0 ? -12 : 0)}" y="${y - 74}" width="12" height="20" style="fill:${col}"/>
+      <rect x="${x - 26}" y="${y - 40}" width="52" height="66" rx="3" class="maku"/>
+      <path d="M${x - 26},${y - 26} L${x + 26},${y - 26} M${x - 26},${y + 12} L${x + 26},${y + 12}" style="stroke:${col}" stroke-width="4"/>
+      <circle cx="${x}" cy="${y - 7}" r="9" style="fill:${col}" class="camp-crest"/>
+      <text x="${x}" y="${y + 44}" class="hq-t">本陣</text>
+      <rect x="${x - 30}" y="${y + 52}" width="60" height="6" class="hq-bg"/><rect x="${x - 30}" y="${y + 52}" width="${(60 * m / 100).toFixed(1)}" height="6" style="fill:${enemy ? 'var(--shu)' : 'var(--ink2)'}" class="hq-fill"/></g>`;
   }
   const ICON = {
-    charge: '<path d="M-9,-8 L0,0 L9,-8 M-9,0 L0,8 L9,0" class="ic" style="stroke:var(--shu)"/>',
-    atk: '<path d="M-9,8 L0,0 L9,8 M-9,0 L0,-8 L9,0" class="ic" style="stroke:var(--ink)"/>',
+    charge: '<path d="M8,-9 L0,0 L8,9 M0,-9 L-8,0 L0,9" class="ic" style="stroke:var(--shu)"/>',
+    atk: '<path d="M-8,-9 L0,0 L-8,9 M0,-9 L8,0 L0,9" class="ic" style="stroke:var(--ink)"/>',
     hold: '<path d="M-10,-7 L-10,8 M-3,-9 L-3,8 M4,-9 L4,8 M11,-7 L11,8 M-12,-2 L13,-2 M-12,4 L13,4" class="ic" style="stroke:var(--r2)"/>',
     shoot: '<circle cx="-6" cy="2" r="5" style="fill:var(--kin)" opacity=".75"/><circle cx="2" cy="-3" r="6" style="fill:var(--kin)" opacity=".55"/><circle cx="9" cy="3" r="4" style="fill:var(--kin)" opacity=".75"/><path d="M-12,8 L4,-2" class="ic" style="stroke:var(--ink)"/>',
     feint: '<path d="M8,-8 C-10,-10 -12,8 4,8" class="ic" style="stroke:var(--ok)"/><path d="M0,3 L5,8 L0,13" class="ic" style="stroke:var(--ok)"/>',
@@ -422,15 +426,18 @@ window.TArt = (function () {
   }
   function terrain(ter, river, seed) {
     const r = rng(seed + 5); let g = '';
-    for (let i = 0; i < 70; i++) { const x = r() * 600, y = 60 + r() * 270; g += `<path d="M${x.toFixed(0)},${y.toFixed(0)} l2,-5 M${(x + 3).toFixed(0)},${y.toFixed(0)} l1,-4" class="grass"/>`; }
-    if (ter === 'mountain') g += `<path d="M-10,380 L-10,90 Q30,60 60,110 Q80,150 50,220 Q20,300 40,380Z M610,380 L610,80 Q570,60 545,120 Q525,170 555,240 Q580,310 560,380Z" class="hill"/>`;
-    if (river) g += `<path d="M-10,182 C120,170 200,200 300,186 C400,172 480,204 610,188 L610,204 C480,220 400,190 300,204 C200,218 120,188 -10,198Z" class="bf-river"/>`;
+    for (let i = 0; i < 80; i++) { const x = r() * 760, y = 30 + r() * 370; g += `<path d="M${x.toFixed(0)},${y.toFixed(0)} l2,-5 M${(x + 3).toFixed(0)},${y.toFixed(0)} l1,-4" class="grass"/>`; }
+    if (ter === 'mountain') g += `<path d="M-10,-10 L770,-10 L770,30 Q700,52 620,34 Q520,14 420,40 Q330,60 240,36 Q140,14 60,38 Q20,48 -10,36Z M-10,430 L770,430 L770,392 Q690,370 600,388 Q500,404 400,382 Q300,364 200,388 Q110,404 -10,386Z" class="hill"/>`;
+    if (river) g += `<path d="M372,-10 C360,80 392,150 376,210 C362,270 394,340 380,430 L398,430 C412,340 380,270 394,210 C410,150 378,80 390,-10Z" class="bf-river"/>`;
     return g;
   }
-  function formIcon(pos, form) {
-    const xs = [7, 18, 29];
-    const dots = xs.map((x, i) => `<circle cx="${x}" cy="${(12 - pos[i] / 3).toFixed(1)}" r="3"/>`).join('');
-    return `<svg viewBox="0 0 36 24" class="form-ic" aria-hidden="true">${form === 'hoen' ? '<ellipse cx="18" cy="14" rx="15" ry="8" class="fi-l"/>' : `<path d="M${xs[0]},${(12 - pos[0] / 3).toFixed(1)} L${xs[1]},${(12 - pos[1] / 3).toFixed(1)} L${xs[2]},${(12 - pos[2] / 3).toFixed(1)}" class="fi-l"/>`}${dots}<rect x="15" y="19" width="6" height="4" class="fi-hq"/></svg>`;
+  // 陣形小圖：我軍朝右，三路與本陣的相對位置
+  function formIcon(geo, hq, form) {
+    const X = dx => (5 + (dx + 130) / 230 * 27).toFixed(1), Y = (i, dy) => (5 + i * 7 + dy / 6).toFixed(1);
+    const pts = geo.map(([dx, dy], i) => [X(dx), Y(i, dy)]);
+    const hp = [X(hq[0]), Y(1, hq[1])];
+    const line = form === 'hoen' ? '<ellipse cx="17" cy="12" rx="14" ry="10" class="fi-l"/>' : `<path d="M${pts[0]} L${pts[1]} L${pts[2]} M${pts[0]} L${hp} L${pts[2]}" class="fi-l"/>`;
+    return `<svg viewBox="0 0 36 24" class="form-ic" aria-hidden="true">${line}${pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="2.8"/>`).join('')}<rect x="${(hp[0] - 2.5).toFixed(1)}" y="${(hp[1] - 2.5).toFixed(1)}" width="5" height="5" class="fi-hq"/></svg>`;
   }
   function unitIcon(type) {
     return `<svg viewBox="${type === 'cav' ? '-18 -54 46 56' : '-14 -62 30 64'}" class="unit-ic" aria-hidden="true">${fig(type, 0, 0, 'var(--shu)', false)}</svg>`;
@@ -438,11 +445,11 @@ window.TArt = (function () {
 
   function weather(kind) {
     const r = rng(11); let g = '';
-    if (kind === 'rain') { for (let i = 0; i < 70; i++) { const x = r() * 640 - 20, y = r() * 380; g += `<line x1="${x.toFixed(0)}" y1="${y.toFixed(0)}" x2="${(x - 8).toFixed(0)}" y2="${(y + 22).toFixed(0)}"/>`; } return `<g class="wx-rain">${g}</g>`; }
-    if (kind === 'mist') return '<g class="wx-mist"><rect x="-80" y="80" width="760" height="44"/><rect x="-80" y="150" width="760" height="26"/><rect x="-80" y="205" width="760" height="38"/></g>';
-    if (kind === 'snow') { for (let i = 0; i < 70; i++) g += `<circle cx="${(r() * 600).toFixed(0)}" cy="${(r() * 380).toFixed(0)}" r="${(1 + r() * 1.6).toFixed(1)}"/>`; return `<g class="wx-snow">${g}</g>`; }
+    if (kind === 'rain') { for (let i = 0; i < 90; i++) { const x = r() * 800 - 20, y = r() * 420; g += `<line x1="${x.toFixed(0)}" y1="${y.toFixed(0)}" x2="${(x - 8).toFixed(0)}" y2="${(y + 22).toFixed(0)}"/>`; } return `<g class="wx-rain">${g}</g>`; }
+    if (kind === 'mist') return '<g class="wx-mist"><rect x="-80" y="70" width="920" height="44"/><rect x="-80" y="180" width="920" height="30"/><rect x="-80" y="290" width="920" height="40"/></g>';
+    if (kind === 'snow') { for (let i = 0; i < 90; i++) g += `<circle cx="${(r() * 760).toFixed(0)}" cy="${(r() * 420).toFixed(0)}" r="${(1 + r() * 1.6).toFixed(1)}"/>`; return `<g class="wx-snow">${g}</g>`; }
     return '';
   }
 
-  return { crest, scene, portrait, fig, block, camp, sign, vsMark, terrain, formIcon, unitIcon, weather, icon: k => ICON[k] };
+  return { crest, scene, portrait, fig, block, blockHalf, camp, sign, vsMark, terrain, formIcon, unitIcon, weather, icon: k => ICON[k] };
 })();

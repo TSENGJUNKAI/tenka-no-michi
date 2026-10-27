@@ -490,7 +490,7 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .wx-snow { animation: snowfall 3s linear infinite; pointer-events: none; }
 @keyframes snowfall { from { transform: translate(0, -12px); } to { transform: translate(6px, 12px); } }
 .sheet-body.bf-body { position: relative; gap: 10px; }
-.bfsvg { width: 100%; max-width: 100%; aspect-ratio: 600 / 380; height: auto; display: block; border: 1px solid var(--line); border-radius: 2px; }
+.bfsvg { width: 100%; max-width: 100%; aspect-ratio: 760 / 420; height: auto; display: block; border: 1px solid var(--line); border-radius: 2px; }
 .bf-ground { fill: color-mix(in srgb, var(--land) 72%, #6f8a45); }
 .grass { stroke: color-mix(in srgb, var(--ink) 22%, transparent); stroke-width: 1; fill: none; }
 .hill { fill: var(--m2); opacity: .55; }
@@ -503,7 +503,11 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .maku { fill: var(--paper); stroke: var(--line); }
 .hq-bg { fill: var(--line); }
 .camp-crest { stroke: var(--paper); stroke-width: 2; }
-.bf-form { fill: none; stroke: var(--ink2); stroke-width: 1.3; stroke-dasharray: 5 5; opacity: .5; }
+.bf-form { fill-opacity: .1; stroke: var(--ink2); stroke-width: 1.4; stroke-dasharray: 6 5; stroke-opacity: .55; stroke-linejoin: round; }
+.bf-fname { font-family: var(--f-brush); font-size: 26px; fill: var(--ink); opacity: .78; paint-order: stroke; stroke: var(--land); stroke-width: 4px; }
+.bf-fname.foe { text-anchor: end; fill: var(--shu); }
+.bf-lane { font-family: var(--f-brush); font-size: 13px; fill: var(--ink2); writing-mode: vertical-rl; text-anchor: middle; paint-order: stroke; stroke: var(--land); stroke-width: 3px; }
+.hq-t { font-family: var(--f-brush); font-size: 12px; text-anchor: middle; fill: var(--ink2); }
 .bf-num { font-size: 15px; fill: var(--ink); text-anchor: middle; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--land); stroke-width: 3px; }
 .sign-bg { fill: var(--paper); stroke: var(--line); stroke-width: 1.2; }
 .sign .ic { fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -518,10 +522,12 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .bfsvg .shot { fill: var(--ink); }
 .bfsvg .puff { fill: #e6dfd2; }
 .bfsvg .arrow { stroke: var(--ink); stroke-width: 1.3; }
-.bf-ctl3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.col { display: grid; gap: 5px; justify-items: center; align-content: start; min-width: 0; text-align: center; }
-.col-h { font-family: var(--f-brush); font-size: .88rem; color: var(--ink2); letter-spacing: .2em; }
-.col .ln-gen { max-width: 140px; }
+.bf-ctl3 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.col { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; padding: 4px 8px; border-left: 3px solid var(--line); background: var(--paper2); }
+.col-h { font-family: var(--f-brush); font-size: .95rem; color: var(--ink); letter-spacing: .1em; width: 3em; flex: none; }
+.col .ln-gen { width: auto; max-width: 9em; }
+.col .uts, .col .ords { display: flex; gap: 4px; }
+.col .pct { margin-left: auto; }
 .ut { padding: 2px 5px; }
 .unit-ic { width: 24px; height: 32px; display: block; }
 .ord { display: grid; justify-items: center; padding: 3px 6px; font-size: .76rem; line-height: 1.15; }
@@ -705,13 +711,13 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 <div id="modal" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 
-<script src="map.js?v=8a"></script>
-<script src="data.js?v=8a"></script>
-<script src="art.js?v=8a"></script>
+<script src="map.js?v=8d"></script>
+<script src="data.js?v=8d"></script>
+<script src="art.js?v=8d"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="fx.js?v=8a"></script>
-<script src="audio.js?v=8a"></script>
-<script src="ukiyo.js?v=8a"></script>
-<script src="game.js?v=8a"></script>
+<script src="fx.js?v=8d"></script>
+<script src="audio.js?v=8d"></script>
+<script src="ukiyo.js?v=8d"></script>
+<script src="game.js?v=8d"></script>
 </body>
 </html>

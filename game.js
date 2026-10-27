@@ -216,7 +216,7 @@
   const TUT = {
     map: [['#route', '這是本章的行軍路線。從上往下選一個節點前進，最下面的「決」是章末決戰。'], ['#bar .res', '兵力、金錢、威望、忠誠。忠誠歸零的話，家臣會背叛你。'], ['#mapwrap', '天下形勢圖。點任何一國，都能看到它今天的地名。']],
     target: [['#modal .selmap', '合戰前先選目標：地圖上標了數字的國，就是可以攻打的鄰國。'], ['#modal .choice.target', '每一國有地形和特產，攻下後特產就歸你。']],
-    setup: [['#modal .forms', '先選陣形，它決定三路部隊的站位和強弱。'], ['#modal .bfsvg', '上方是敵軍，下方是我軍。旗子上的「騎、槍、砲」就是兵種。'], ['#modal .ctr-legend', '兵種相剋：鐵砲克騎馬、騎馬克長槍、長槍克鐵砲。'], ['#modal .bf-ctl3', '替每一路派大將、選兵種、分配兵力。兩軍之間出現綠色▲，代表那一路有利。'], ['#modal #bf-go', '準備好就開戰！']],
+    setup: [['#modal .forms', '先選陣形，它決定三路部隊和本陣的站位與強弱。'], ['#modal .bfsvg', '左邊是我軍，右邊是敵軍；由上而下是左翼、中央、右翼。旗子上的「騎、槍、砲」就是兵種。'], ['#modal .ctr-legend', '兵種相剋：鐵砲克騎馬、騎馬克長槍、長槍克鐵砲。'], ['#modal .bf-ctl3', '替每一路派大將、選兵種、分配兵力。兩軍之間出現綠色▲，代表那一路有利。'], ['#modal #bf-go', '準備好就開戰！']],
     round: [['#modal .bfsvg .sign-enemy', '敵軍旁的圖示是他們下一步的意圖：紅箭頭是突擊、柵欄是固守、硝煙是射擊，問號代表看不清楚。'], ['#modal .bf-ctl3', '替每一路下軍令：敵軍突擊時固守或誘敵，敵軍固守或射擊時就進攻。'], ['#modal .bf-ctl', '預備隊可以投入任何一路；計策每回合可以用一項。'], ['#modal #bf-go', '按下「下令」，三路同時交戰。擊潰敵軍兩路，或讓敵本陣士氣歸零就獲勝。']],
     storm: [['#modal .plan[data-k="sp:storm"]', '暴雨來了！史實上，信長正是趁這場暴雨突襲今川本陣。選這個計策，再按「下令」。']],
     lord: [['#camp .lords', '攻下的國可以派家臣當城主：政務高的人能增加收入，武勇高的人守城更穩。但城主不能上戰場。']]
@@ -1075,11 +1075,11 @@
   const BEATS = { gun: 'cav', cav: 'spear', spear: 'gun' };
   const LANE = ['左翼', '中央', '右翼'];
   const FORMS = {
-    gyorin: { n: '魚鱗', d: '中央突出：中央 +30%，兩翼 -10%', pos: [0, 24, 0], m: [.9, 1.3, .9], hist: '部隊像魚鱗般層層排列、中央突出，適合以少擊多。三方原之戰中，武田信玄擺的就是魚鱗之陣。' },
-    kakuyoku: { n: '鶴翼', d: '兩翼前伸：兩翼 +20%，中央 -15%；兩翼都勝可包圍本陣', pos: [24, -8, 24], m: [1.2, .85, 1.2], hist: '像鶴展翅般向兩側張開，適合以多擊少、包圍敵軍。三方原之戰中，德川家康就擺出鶴翼之陣迎戰武田。' },
-    hoshi: { n: '鋒矢', d: '全軍突擊：攻擊 +15%，損失 +15%', pos: [12, 34, 12], m: [1.15, 1.15, 1.15], lossMul: 1.15, hist: '像箭頭一樣全力向前衝，是攻擊性最強的陣形，但側面和後方容易被攻破。' },
-    engetsu: { n: '偃月', d: '大將在前：中央 +15%，本陣受損 -40%', pos: [4, 16, 4], m: [1, 1.15, 1], hqMul: .6, hist: '大將親自站在弧形陣前端，士氣高昂但大將危險。傳說上杉謙信擅長這種陣形。' },
-    hoen: { n: '方圓', d: '圓陣死守：損失 -25%，攻擊 -15%', pos: [-16, -10, -16], m: [.85, .85, .85], lossMul: .75, hist: '把大將圍在中央的圓形防禦陣，適合被包圍時固守，或等待援軍到來。' }
+    gyorin: { n: '魚鱗', d: '中央突出：中央 +30%，兩翼 -10%', pos: [0, 24, 0], geo: [[0, 16], [64, 0], [0, -16]], hq: [-128, 0], m: [.9, 1.3, .9], hist: '部隊像魚鱗般層層排列、中央突出，適合以少擊多。三方原之戰中，武田信玄擺的就是魚鱗之陣。' },
+    kakuyoku: { n: '鶴翼', d: '兩翼前伸：兩翼 +20%，中央 -15%；兩翼都勝可包圍本陣', pos: [24, -8, 24], geo: [[74, -14], [-18, 0], [74, 14]], hq: [-128, 0], m: [1.2, .85, 1.2], hist: '像鶴展翅般向兩側張開，適合以多擊少、包圍敵軍。三方原之戰中，德川家康就擺出鶴翼之陣迎戰武田。' },
+    hoshi: { n: '鋒矢', d: '全軍突擊：攻擊 +15%，損失 +15%', pos: [12, 34, 12], geo: [[12, 28], [108, 0], [12, -28]], hq: [-62, 0], m: [1.15, 1.15, 1.15], lossMul: 1.15, hist: '像箭頭一樣全力向前衝，是攻擊性最強的陣形，但側面和後方容易被攻破。' },
+    engetsu: { n: '偃月', d: '大將在前：中央 +15%，本陣受損 -40%', pos: [4, 16, 4], geo: [[-30, -6], [6, 0], [-30, 6]], hq: [96, 0], m: [1, 1.15, 1], hqMul: .6, hist: '大將親自站在弧形陣前端，士氣高昂但大將危險。傳說上杉謙信擅長這種陣形。' },
+    hoen: { n: '方圓', d: '圓陣死守：損失 -25%，攻擊 -15%', pos: [-16, -10, -16], geo: [[6, 12], [58, 0], [6, -12]], hq: [-62, 0], m: [.85, .85, .85], lossMul: .75, hist: '把大將圍在中央的圓形防禦陣，適合被包圍時固守，或等待援軍到來。' }
   };
   const ORD = { atk: '進攻', hold: '固守', feint: '誘敵' };
   const INTENT = { charge: '突擊', hold: '固守', shoot: '射擊' };
@@ -1147,31 +1147,62 @@
       $('#m-ok').focus(); $('#m-ok').onclick = setup;
     };
 
-    // 戰場圖：上方敵軍、下方我軍，左中右三路
-    const LX = [110, 300, 490], EY = 124, OY = 262;
+    // 戰場圖：左邊我軍、右邊敵軍，由上而下是左翼、中央、右翼（我軍朝右進攻，左手邊在上）
+    const W = 760, LY = [100, 210, 320], X0 = 215;
     const unit = Math.max(T, EP) / 22;
     const ourCol = FAC[S.fac].color, foeCol = foeColor || '#b5361f';
     const shown = (l, mode) => mode === 'setup' ? Math.round(T * l.pct / 100) : l.troops;
-    const ourY = i => OY - Math.round(FORMS[st.form].pos[i] * .8);
-    const foeY = i => EY + Math.round(FORMS[foeForm].pos[i] * .5);
+    // 鶴翼兩翼都擊潰敵軍時，兩翼向內合攏、包圍敵本陣
+    const envelop = () => st.form === 'kakuyoku' && st.round > 0 && foe[0].broken && foe[2].broken && !our[0].broken && !our[2].broken;
+    const geoOf = (form, i) => envelop() && i !== 1 && form === st.form ? [190, i === 0 ? 48 : -48] : FORMS[form].geo[i];
+    const ourPt = i => [X0 + geoOf(st.form, i)[0], LY[i] + geoOf(st.form, i)[1]];
+    const foePt = i => [W - X0 - FORMS[foeForm].geo[i][0], LY[i] + FORMS[foeForm].geo[i][1]];
+    const hqPt = (form, enemy) => { const h = FORMS[form].hq; return enemy ? [W - X0 - h[0], LY[1] + h[1]] : [X0 + h[0], LY[1] + h[1]]; };
     const portraitAt = (id, x, y, s) => TArt.portrait(GEN[id], ageOf(GEN[id]), FAC[GEN[id].home] ? FAC[GEN[id].home].color : '#777').replace('<svg viewBox', `<svg x="${x}" y="${y}" width="${s}" height="${s}" viewBox`);
+    // 陣形的淡色輪廓：圓陣畫橢圓，其他畫出三路與本陣連成的形狀
+    const formShape = (form, pts, hq, col, enemy) => {
+      const all = pts.concat([hq]);
+      if (form === 'hoen') {
+        const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+        const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+        return `<ellipse cx="${cx}" cy="${cy}" rx="${(Math.max(...xs) - Math.min(...xs)) / 2 + 70}" ry="${(Math.max(...ys) - Math.min(...ys)) / 2 + 62}" class="bf-form" style="fill:${col}"/>`;
+      }
+      const pad = enemy ? -1 : 1;
+      const tip = p => `${p[0] + pad * 40},${p[1]}`;
+      return `<path d="M${hq[0] - pad * 30},${hq[1]} L${pts[0][0]},${pts[0][1] - 44} L${tip(pts[1])} L${pts[2][0]},${pts[2][1] + 44}Z" class="bf-form" style="fill:${col}"/>`;
+    };
     const svgField = mode => {
-      const pts = LX.map((x, i) => `${x},${ourY(i) + 4}`);
-      const outline = st.form === 'hoen' ? `<ellipse cx="300" cy="${OY + 22}" rx="262" ry="66" class="bf-form"/>` : `<path d="M${pts[0]} L${pts[1]} L${pts[2]} M${pts[0]} L300,${OY + 70} L${pts[2]}" class="bf-form"/>`;
-      let s = `<svg class="bfsvg" viewBox="0 0 600 380" role="img" aria-label="戰場：上方是敵軍，下方是我軍"><rect class="bf-ground" width="600" height="380"/>${TArt.terrain(def.terrain, def.scene === 'river', def.n.length)}${TArt.camp(300, 34, foeCol, true, st.hq.foe)}${TArt.camp(300, 350, ourCol, false, st.hq.our)}${outline}`;
+      const ours = [0, 1, 2].map(ourPt), foes = [0, 1, 2].map(foePt), ohq = hqPt(st.form, false), fhq = hqPt(foeForm, true);
+      let s = `<svg class="bfsvg" viewBox="0 0 ${W} 420" role="img" aria-label="戰場：左邊是我軍，右邊是敵軍；由上而下是左翼、中央、右翼"><rect class="bf-ground" width="${W}" height="420"/>${TArt.terrain(def.terrain, def.scene === 'river', def.n.length)}`;
+      s += formShape(st.form, ours, ohq, ourCol, false) + formShape(foeForm, foes, fhq, foeCol, true);
+      s += `<text class="bf-fname" x="14" y="30">${FORMS[st.form].n}之陣</text><text class="bf-fname foe" x="${W - 14}" y="30">${FORMS[foeForm].n}之陣</text>`;
+      s += `<g class="bf-hqg our" data-x="${ohq[0]}" data-y="${ohq[1]}">${TArt.camp(ohq[0], ohq[1], ourCol, false, st.hq.our)}</g>${TArt.camp(fhq[0], fhq[1], foeCol, true, st.hq.foe)}`;
       [0, 1, 2].forEach(i => {
-        const f = foe[i], l = our[i], x = LX[i], oy = ourY(i);
+        const f = foe[i], l = our[i], [ox, oy] = ours[i], [ex, ey] = foes[i];
         const adv = BEATS[l.type] === f.type ? 'adv' : BEATS[f.type] === l.type ? 'dis' : '';
         const lb = l.broken || (mode === 'setup' && l.pct === 0);
-        const fy = foeY(i);
-        s += `<g class="blk foe" data-i="${i}">${TArt.block(f.type, f.troops, unit, x, fy, foeCol, true, f.broken)}<text class="bf-num" x="${x}" y="${fy + 48}">${f.broken ? '潰走' : fmt(f.troops)}</text></g>`;
-        if (mode !== 'setup' && !f.broken) s += TArt.sign(f.known ? f.shown : 'unk', x - 66, fy - 14, true);
-        if (!f.broken && !lb) s += TArt.vsMark(adv, x - 8, (fy + oy) / 2 + 2);
-        s += `<g class="blk our" data-i="${i}">${TArt.block(l.type, shown(l, mode), unit, x, oy, ourCol, false, lb)}<text class="bf-num" x="${x}" y="${oy + 48}">${l.broken ? '潰走' : lb ? '' : fmt(shown(l, mode))}</text></g>`;
-        if (l.g && !lb) s += portraitAt(l.g, x - 82, oy + 10, 28);
-        if (mode !== 'setup' && !l.broken) s += TArt.sign(l.order, x - 66, oy - 14, false);
+        const oh = TArt.blockHalf(l.type, shown(l, mode), unit), eh = TArt.blockHalf(f.type, f.troops, unit);
+        s += `<text class="bf-lane" x="12" y="${LY[i] + 4}">${LANE[i]}</text>`;
+        s += `<g class="blk foe" data-i="${i}">${TArt.block(f.type, f.troops, unit, ex, ey, foeCol, true, f.broken)}<text class="bf-num" x="${ex}" y="${ey + 56}">${f.broken ? '潰走' : fmt(f.troops)}</text></g>`;
+        s += `<g class="blk our" data-i="${i}" data-x="${ox}" data-y="${oy}">${TArt.block(l.type, shown(l, mode), unit, ox, oy, ourCol, false, lb)}<text class="bf-num" x="${ox}" y="${oy + 56}">${l.broken ? '潰走' : lb ? '' : fmt(shown(l, mode))}</text>${l.g && !lb ? portraitAt(l.g, ox - oh - 50, oy + 4, 28) : ''}</g>`;
+        const sx = Math.min(W / 2 - 22, ox + oh + 20), fx = Math.max(W / 2 + 22, ex - eh - 20);
+        if (mode !== 'setup' && !f.broken) s += TArt.sign(f.known ? f.shown : 'unk', fx, ey - 6, true);
+        if (mode !== 'setup' && !l.broken) s += TArt.sign(l.order, sx, oy - 6, false);
+        if (!f.broken && !lb) s += TArt.vsMark(adv, W / 2, (oy + ey) / 2 - 30);
       });
       return s + TArt.weather(weather()) + '</svg>';
+    };
+    // 換陣形時，部隊從舊位置移動到新位置
+    let lastPos = null;
+    const animateForm = () => {
+      const svg = $('#modal .bfsvg'); if (!svg) return;
+      const els = [...svg.querySelectorAll('.blk.our, .bf-hqg.our')];
+      const now = els.map(el => [+el.dataset.x, +el.dataset.y]);
+      if (lastPos && lastPos.form !== st.form) {
+        els.forEach((el, k) => TFx.slide(el, lastPos.pts[k][0] - now[k][0], lastPos.pts[k][1] - now[k][1]));
+        TFx.pop(svg.querySelector('.bf-fname'));
+      }
+      lastPos = { form: st.form, pts: now };
     };
     const tags = () => `<div class="bf-tags"><span>敵將・${esc(def.cmd.replace(/家的部將$/, '軍'))}<b>${PERS[pers].n}</b></span><span>${FORMS[foeForm].n}之陣</span><span>${WEATHER[weather()].ic} ${WEATHER[weather()].n}${WEATHER[weather()].d ? '・' + WEATHER[weather()].d : ''}</span>${st.foeRes > 0 && st.round > 0 ? '<span>敵預備隊待命</span>' : ''}</div>`;
     const legend = `<div class="ctr-legend" role="img" aria-label="兵種相剋：鐵砲克騎馬、騎馬克長槍、長槍克鐵砲">${TArt.unitIcon('gun')}<span>›</span>${TArt.unitIcon('cav')}<span>›</span>${TArt.unitIcon('spear')}<span>›</span>${TArt.unitIcon('gun')}</div>`;
@@ -1187,7 +1218,7 @@
       const resPct = 100 - our.reduce((a, l) => a + l.pct, 0);
       openModal(`<div class="sheet-body bf-body">
         <div class="bf-head"><div><div class="kicker">布陣</div><h2>${esc(def.n)}</h2></div>${legend}</div>
-        <div class="forms" role="group" aria-label="陣形">${Object.entries(FORMS).map(([k, f]) => `<button class="form ${st.form === k ? 'on' : ''}" data-f="${k}" aria-label="${f.n}之陣">${TArt.formIcon(f.pos, k)}<span>${f.n}</span></button>`).join('')}</div>
+        <div class="forms" role="group" aria-label="陣形">${Object.entries(FORMS).map(([k, f]) => `<button class="form ${st.form === k ? 'on' : ''}" data-f="${k}" aria-label="${f.n}之陣">${TArt.formIcon(f.geo, f.hq, k)}<span>${f.n}</span></button>`).join('')}</div>
         <p class="form-d">${FORMS[st.form].n}・${FORMS[st.form].d}</p>
         ${tags()}
         ${svgField('setup')}
@@ -1207,6 +1238,7 @@
         if (d > 0 && sum + d > 100) return;
         l.pct = clamp(l.pct + d, 0, 70); setup();
       });
+      animateForm();
       setTimeout(() => tutor('setup'), 200);
       $('#bf-go').onclick = () => {
         our.forEach(l => { l.troops = l.t0 = Math.round(T * l.pct / 100); if (l.troops <= 0) { l.broken = true; } });
@@ -1288,7 +1320,7 @@
         const f = st.fx; st.fx = null;
         const svg = $('#modal .bfsvg');
         f.lanes.forEach((x, i) => {
-          if (x.order) TFx.clash(svg, i, { order: x.order, intent: x.intent, ourType: x.ourType, x: LX[i], oy: ourY(i), ey: foeY(i) });
+          if (x.order) TFx.clash(svg, i, { order: x.order, intent: x.intent, ourType: x.ourType, y: ourPt(i)[1], ox: ourPt(i)[0], ex: foePt(i)[0] });
           setTimeout(() => {
             if (!svg || !svg.isConnected) return;
             if (x.toFoe) TFx.floatText(svg.querySelector(`.blk.foe[data-i="${i}"]`), `-${fmt(x.toFoe)}`, '');
