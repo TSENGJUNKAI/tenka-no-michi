@@ -258,10 +258,61 @@
       },
       labelMode(mode) { svg.classList.toggle('lbl-old', mode !== 'now'); svg.classList.toggle('lbl-now', mode === 'now'); },
       cell: id => cells[id],
+      getView: () => vb.slice(),
+      zoom(f) { const r = svg.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, f); },
       onClick(fn) {
         svg.addEventListener('click', e => { const c = e.target.closest('.cell'); if (c) fn(c.dataset.id, e); });
       }
     };
+    // ───── 拖移與縮放：滑鼠拖曳、滾輪；觸控單指拖曳、雙指捏合 ─────
+    const setVb = v => { vb = v; svg.setAttribute('viewBox', vb.map(f2).join(' ')); };
+    const toSvg = (cx, cy) => { const m = svg.getScreenCTM(); if (!m) return [vb[0], vb[1]]; const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; const q = pt.matrixTransform(m.inverse()); return [q.x, q.y]; };
+    const unit = () => { const m = svg.getScreenCTM(); return m && m.a ? 1 / m.a : 1; };
+    function clampVb(v) {
+      let [x, y, w, h] = v;
+      x = Math.min(Math.max(x, -W * .15), W * 1.15 - w);
+      y = Math.min(Math.max(y, -H * .15), H * 1.15 - h);
+      return [x, y, w, h];
+    }
+    function zoomAt(cx, cy, f) {
+      if (anim) { cancelAnimationFrame(anim); anim = null; }
+      f = Math.min(Math.max(f, 240 / vb[2]), Math.min(W * 1.3 / vb[2], H * 1.3 / vb[3]));
+      const [px, py] = toSvg(cx, cy);
+      setVb(clampVb([px - (px - vb[0]) * f, py - (py - vb[1]) * f, vb[2] * f, vb[3] * f]));
+    }
+    if (opt.pan) {
+      svg.classList.add('pannable');
+      const ptr = new Map(); let moved = 0, suppress = false;
+      const mid = () => { const a = [...ptr.values()]; return a.length > 1 ? [(a[0][0] + a[1][0]) / 2, (a[0][1] + a[1][1]) / 2, Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1])] : [a[0][0], a[0][1], 0]; };
+      svg.addEventListener('pointerdown', e => {
+        if (e.button > 0) return;
+        ptr.set(e.pointerId, [e.clientX, e.clientY]);
+        if (ptr.size === 1) moved = 0;
+      });
+      svg.addEventListener('pointermove', e => {
+        if (!ptr.has(e.pointerId)) return;
+        const [ox, oy, od] = mid();
+        ptr.set(e.pointerId, [e.clientX, e.clientY]);
+        const [nx, ny, nd] = mid();
+        moved += Math.abs(nx - ox) + Math.abs(ny - oy) + Math.abs(nd - od);
+        if (moved < 6) return;
+        if (!svg.hasPointerCapture(e.pointerId)) { try { svg.setPointerCapture(e.pointerId); } catch (er) { } svg.classList.add('dragging'); svg.dispatchEvent(new CustomEvent('mappan')); }
+        if (anim) { cancelAnimationFrame(anim); anim = null; }
+        const u = unit();
+        setVb(clampVb([vb[0] - (nx - ox) * u, vb[1] - (ny - oy) * u, vb[2], vb[3]]));
+        if (ptr.size > 1 && od && nd) zoomAt(nx, ny, od / nd);
+      });
+      const up = e => {
+        if (!ptr.delete(e.pointerId)) return;
+        if (moved >= 6) suppress = true;
+        if (!ptr.size) svg.classList.remove('dragging');
+      };
+      svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+      // 拖過就不算點擊，避免放開時誤選國家
+      svg.addEventListener('click', e => { if (suppress) { suppress = false; e.stopImmediatePropagation(); } }, true);
+      svg.addEventListener('pointerdown', () => { suppress = false; }, true);
+      svg.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(e.deltaY * (e.deltaMode ? .05 : .0015))); }, { passive: false });
+    }
     return api;
   }
 

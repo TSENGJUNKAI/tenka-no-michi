@@ -107,7 +107,7 @@
   };
 
   // ───────── 效果 ─────────
-  const LBL = { troops: '兵力', gold: '金', pres: '威望', loy: '忠誠', gauge: '忍', income: '每回合收入' };
+  const LBL = { troops: '兵力', gold: '金錢', pres: '威望', loy: '忠誠', gauge: '忍耐', income: '每回合收入' };
   function poolGens(rar) {
     return GENS.filter(g => !g.evOnly && !S.gens.includes(g.id) && !S.dead.includes(g.id) && S.year >= g.from && S.year < g.d - .02 && (!rar || rar.includes(g.r)));
   }
@@ -164,7 +164,7 @@
     if (!eff) return '';
     const parts = [];
     ['troops', 'gold', 'pres', 'loy', 'gauge'].forEach(k => { if (eff[k] && (k !== 'gauge' || S.fac === 'tokugawa')) parts.push(`${LBL[k]} ${eff[k] > 0 ? '+' : ''}${fmt(eff[k])}`); });
-    if (eff.goldPerProv) parts.push(`金 +${eff.goldPerProv * provCount()}`);
+    if (eff.goldPerProv) parts.push(`金錢 +${eff.goldPerProv * provCount()}`);
     if (eff.income) parts.push(`收入 +${eff.income}/回合`);
     if (eff.gen) parts.push(GEN[eff.gen] ? `${GEN[eff.gen].n} 加入` : '新家臣加入');
     if (eff.treas) parts.push(`名物「${TR[eff.treas].n}」`);
@@ -454,6 +454,7 @@
   const TYPES = [['battle', .3], ['event', .32], ['recruit', .1], ['shop', .1], ['temple', .1], ['diplo', .08]];
   const TICON = { battle: '戰', event: '事', recruit: '才', shop: '市', temple: '寺', diplo: '盟', boss: '決' };
   const TNAME = { battle: '合戰', event: '事件', recruit: '人才', shop: '城下町', temple: '寺社', diplo: '外交', boss: '決戰' };
+  const NODE_D = { battle: '從地圖上挑一個鄰國攻打，打贏就占領它', event: '遇到一段歷史情境，做出選擇', recruit: '招募新的家臣', shop: '花金錢買名物、募集足輕、犒賞家臣', temple: '休養生息：補兵力、提升忠誠或威望', diplo: '和其他大名結盟', boss: '每一章最後的歷史決戰' };
   function wtype() { let t = rnd(); for (const [k, w] of TYPES) { t -= w; if (t <= 0) return k; } return 'event'; }
   function genMap() {
     const rows = [];
@@ -499,7 +500,8 @@
         <section class="route panel" id="route" aria-label="行軍路線"></section>
         <section class="mapwrap" id="mapwrap" aria-label="天下形勢">
           <svg id="bigmap" role="img" aria-label="日本勢力圖"></svg>
-          <div class="mapctl"><button class="btn" id="mv-lbl" aria-pressed="false">今名</button><button class="btn" id="mv-home">本國周邊</button><button class="btn" id="mv-all">全日本</button></div>
+          <div class="mapctl"><button class="btn" id="mv-lbl" aria-pressed="false">今名</button><button class="btn" id="mv-home">本國周邊</button><button class="btn" id="mv-all">全日本</button><button class="btn" id="mv-in" aria-label="放大">＋</button><button class="btn" id="mv-out" aria-label="縮小">－</button></div>
+          <div class="maphint fine">拖曳移動・滾輪或雙指縮放</div>
           <div class="mapinfo" id="mapinfo"></div>
           <div class="ptip" id="ptip" hidden></div>
         </section>
@@ -507,7 +509,8 @@
       </div>
       <nav class="tabs" id="tabs"><button data-t="route">路線</button><button data-t="map">天下</button><button data-t="camp">家臣</button></nav>`;
     TAudio.play('calm');
-    bigMap = TMap.buildMap($('#bigmap'), { id: 'b' });
+    bigMap = TMap.buildMap($('#bigmap'), { id: 'b', pan: true });
+    $('#bigmap').addEventListener('mappan', () => { $('#ptip').hidden = true; });
     bigMap.onClick((pid) => {
       const p = TMap.byId[pid], o = S.owners[pid];
       const tip = $('#ptip'), svg = $('#bigmap');
@@ -524,6 +527,8 @@
     $('#mv-lbl').onclick = () => { lbl = lbl === 'now' ? 'old' : 'now'; store.set('tenka.lbl', lbl); setLbl(); };
     $('#mv-home').onclick = () => bigMap.setView(bigMap.boxFor(myProvs(), 200));
     $('#mv-all').onclick = () => bigMap.setView([0, 0, TMap.W, TMap.H]);
+    $('#mv-in').onclick = () => bigMap.zoom(.7);
+    $('#mv-out').onclick = () => bigMap.zoom(1 / .7);
     document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
       const t = b.dataset.t;
       runTab = (t === 'camp' && runTab === 'camp' && window.innerWidth > 760) ? 'route' : t;
@@ -543,11 +548,11 @@
     $('#bar').innerHTML = `
       <div class="lord">${TArt.crest(FAC[S.fac].crest)}<div><b>${esc(leaderName())}</b><div class="era">${yearLabel(S.year)}<small>${Math.floor(S.year)} 年・領地 ${provCount()} 國</small></div></div></div>
       <div class="res num">
-        <span class="chip" data-k="troops" title="兵力"><i>兵</i><b class="v">${fmt(S.troops)}</b></span>
-        <span class="chip" data-k="gold" title="金錢"><i>金</i><b class="v">${fmt(S.gold)}</b></span>
-        <span class="chip" data-k="pres" title="威望"><i>威</i><b class="v">${fmt(S.pres)}</b></span>
-        <span class="chip ${S.loy < 35 ? 'warn' : ''}" data-k="loy" title="家臣忠誠"><i>忠</i><span class="meter"><span style="width:${S.loy}%"></span></span>${S.loy}</span>
-        ${S.fac === 'tokugawa' ? `<span class="chip" data-k="gauge" title="忍耐"><i>忍</i><span class="meter"><span style="width:${S.gauge}%"></span></span>${S.gauge}</span>` : ''}
+        <span class="chip" data-k="troops" data-gloss="兵力" role="button" tabindex="0"><i>兵力</i><b class="v">${fmt(S.troops)}</b></span>
+        <span class="chip" data-k="gold" data-gloss="金錢" role="button" tabindex="0"><i>金錢</i><b class="v">${fmt(S.gold)}</b></span>
+        <span class="chip" data-k="pres" data-gloss="威望" role="button" tabindex="0"><i>威望</i><b class="v">${fmt(S.pres)}</b></span>
+        <span class="chip ${S.loy < 35 ? 'warn' : ''}" data-k="loy" data-gloss="忠誠" role="button" tabindex="0"><i>忠誠</i><span class="meter"><span style="width:${S.loy}%"></span></span>${S.loy}</span>
+        ${S.fac === 'tokugawa' ? `<span class="chip" data-k="gauge" data-gloss="忍耐" role="button" tabindex="0"><i>忍耐</i><span class="meter"><span style="width:${S.gauge}%"></span></span>${S.gauge}</span>` : ''}
       </div>
       <div class="tools"><button class="btn" id="b-snd2"></button><button class="btn" id="b-cdx">圖鑑</button><button class="btn" id="b-menu">選單</button></div>`;
     bindSoundToggle($('#b-snd2'), true);
@@ -583,14 +588,14 @@
         const isAv = av.includes(r + ':' + i);
         const past = !done && S.map.pos && r <= S.map.pos[0];
         const bossName = n.t === 'boss' ? B[c.boss].n : '';
-        nodes += `<button class="node t-${n.t} ${isAv ? 'avail' : ''} ${done ? 'done' : ''} ${here ? 'here' : ''} ${past ? 'past' : ''}" style="left:${xpos(i, row.length)}%;top:${y}px" data-r="${r}" data-c="${i}" ${isAv ? '' : 'tabindex="-1"'} aria-label="${TNAME[n.t]}${bossName ? '：' + bossName : ''}${isAv ? '（可前往）' : ''}">${TICON[n.t]}</button>`;
+        nodes += `<button class="node t-${n.t} ${isAv ? 'avail' : ''} ${done ? 'done' : ''} ${here ? 'here' : ''} ${past ? 'past' : ''}" style="left:${xpos(i, row.length)}%;top:${y}px" data-r="${r}" data-c="${i}" ${isAv ? '' : 'tabindex="-1"'} title="${TNAME[n.t]}：${NODE_D[n.t]}" aria-label="${TNAME[n.t]}${bossName ? '：' + bossName : ''}${isAv ? '（可前往）' : ''}">${TICON[n.t]}</button>`;
         if (bossName) nodes += `<span class="node-name" style="left:${xpos(i, row.length)}%;top:${y + 36}px">${esc(bossName)}</span>`;
       });
     });
     el.innerHTML = `<div class="chap"><div class="k">${esc(c.t.split('　')[0])}</div><h3>${esc(c.t.split('　')[1])}</h3></div>
       <div class="route-body"><div class="route-wrap" style="height:${total + 30}px">
         <svg class="edges" viewBox="0 0 100 ${total + 30}" preserveAspectRatio="none">${edges}</svg>${lbls}${nodes}</div></div>
-      <div class="legend">${Object.keys(TICON).map(k => `<span><b>${TICON[k]}</b>${TNAME[k]}</span>`).join('')}</div>`;
+      <div class="legend">${Object.keys(TICON).map(k => `<span data-gloss="${TNAME[k]}" role="button" tabindex="0"><b>${TICON[k]}</b>${TNAME[k]}</span>`).join('')}</div>`;
     el.querySelectorAll('.node.avail').forEach(b => b.onclick = () => goNode(+b.dataset.r, +b.dataset.c));
   }
   function renderCamp() {
@@ -617,21 +622,109 @@
     return `<div class="sec-h"><h3>領地與城主</h3><small>${Object.keys(S.lords).length} 位城主</small></div>
       <div class="lords">${mine.map(p => { const pv = TMap.byId[p], l = S.lords[p];
         return `<label class="lord-row"><span><b class="brush">${pv.n}</b><small>今${pv.nowS}${l ? `・收入 +${Math.floor(stat(l, 'a') / 15)}` : ''}</small></span>
-          <select data-p="${p}" aria-label="${pv.n}的城主"><option value="">（無城主）</option>${S.gens.filter(g => g === l || !used.includes(g)).map(g => `<option value="${g}" ${g === l ? 'selected' : ''}>${GEN[g].n}・武${stat(g, 'w')}・政${stat(g, 'a')}</option>`).join('')}</select></label>`; }).join('')}</div>
+          <select data-p="${p}" aria-label="${pv.n}的城主"><option value="">（無城主）</option>${S.gens.filter(g => g === l || !used.includes(g)).map(g => `<option value="${g}" ${g === l ? 'selected' : ''}>${GEN[g].n}・武勇 ${stat(g, 'w')}・政務 ${stat(g, 'a')}</option>`).join('')}</select></label>`; }).join('')}</div>
       <p class="empty">城主能增加收入、守城更穩，但不能上戰場。</p>`;
   }
   function bindLords() {
     document.querySelectorAll('#camp .lords select').forEach(sel => sel.onchange = () => { S.lords[sel.dataset.p] = sel.value || undefined; if (!sel.value) delete S.lords[sel.dataset.p]; saveRun(); renderCamp(); });
     if (myProvs().length >= 2 && $('#modal').hidden) setTimeout(() => tutor('lord'), 300);
   }
+  // ───────── 用語說明與武將詳細資料 ─────────
+  const SKD = { atk: '「進攻」軍令的攻擊力', amb: '「誘敵」軍令的攻擊力', plot: '計策、調略與結盟的成功率', gun: '鐵砲隊的攻擊力', def: '合戰中我軍承受的損失', income: '每回合的金錢收入', troops: '每回合補充的兵力', winpres: '打勝仗時額外獲得的威望', wingold: '打勝仗時額外獲得的金錢', loy: '每回合家臣忠誠的變化', siege: '守城戰時的損失', escape: '撤退時不損失兵力', risk: '忠誠低於 60 時，這位武將可能謀反' };
+  const GLOSS = {
+    '兵力': '全軍人數。合戰時分給左翼、中央、右翼和預備隊，打仗會折損。每回合依領地補充（每國約 220 人）。歸零就會滅亡。',
+    '金錢': '用來招募武將、購買名物、犒賞將士。每回合收入是 6 金加上每國 4 金，再加上城主的政務與技能。',
+    '威望': '天下人對你的評價。越高，與其他大名結盟的成功率越高。打勝仗會增加，按兵不動會減少。',
+    '忠誠': '家臣團對你的信心（0–100）。低於 60 時，有「謀反風險」的武將可能叛變；降到 0 會被家臣逐出城、遊戲結束。可以花 25 金「犒賞將士」讓忠誠 +10。',
+    '忍耐': '德川家專屬。選擇隱忍的選項、或合戰中我軍損失比敵軍多時會累積；滿 100 時，合戰中可以發動「忍耐爆發」，一回合不受任何損失。',
+    '武勇': '擔任某一路的大將時，那一路的戰力是 1 + (武勇 − 50) ÷ 150：武勇 50 不加不減，80 是 +20%，沒有大將是 −15%。當城主時，武勇越高，敵國越難反攻得手。',
+    '智謀': '智謀 60 以上的大將，那一路才能下「誘敵」軍令。全軍有人智謀 80 以上時，合戰中能多看穿一路敵軍的意圖。調略敵軍的成功率看全軍最高的（智謀＋政務）÷ 2。',
+    '政務': '當城主時，每回合收入增加「政務 ÷ 15」金（政務 75 是 +5 金）。也會影響調略敵軍的成功率。',
+    '等級': 'Lv1 新參 → Lv2 侍大將 → Lv3 部將 → Lv4 宿老 → Lv5 天下之士。在合戰中打贏、立功會累積功勳（卡片最下面的細條）。每升一級，最擅長的能力 +3、其他 +1；Lv3 起技能效果 ×1.25，Lv5 ×1.5。',
+    '稀有度': '★ 越多越有名、能力越強，招募也越貴（★ 35 金、★★ 70 金、★★★ 130 金）。',
+    '城主': '攻下的國可以派家臣去當城主：政務越高收入越多，武勇越高越不容易被反攻。但城主不能上戰場。',
+    '羈絆': '特定武將湊齊時發動的額外加成，例如德川四天王、兩兵衛。',
+    '戰力': '兵力 × 各項加成：大將武勇、兵種相剋、陣形、地形、天候、技能。布陣與每回合的畫面會把每一項列出來；實際交戰時還要再看當回合的軍令與敵軍意圖。',
+    '兵種相剋': '鐵砲剋騎馬、騎馬剋長槍、長槍剋鐵砲。有利時戰力 ×1.5，不利時 ×0.7（織田家的鐵砲有利時 ×1.7）。',
+    '軍令': '進攻：主動出擊，敵軍固守或射擊時最有效。固守：減少損失，擋住敵軍突擊。誘敵：假裝撤退、引敵深入，用來反制突擊，需要智謀 60 以上的大將。',
+    '敵軍意圖': '敵軍旁的圖示：紅箭頭是突擊、柵欄是固守、硝煙是射擊、問號是看不清楚。狡猾的敵將可能虛晃一招。',
+    '本陣士氣': '陣幕下的紅條。某一路潰走、或被敵軍突破時會下降，歸零就輸了。',
+    '預備隊': '沒有分配到三路的兵力，可以在某一回合投入任何一路。'
+  };
+  Object.keys(TNAME).forEach(k => { GLOSS[TNAME[k]] = `路線上的「${TICON[k]}」：${NODE_D[k]}。`; });
+  const GLOSS_GROUP = [['路線', Object.values(TNAME)], ['資源', ['兵力', '金錢', '威望', '忠誠', '忍耐']], ['武將', ['武勇', '智謀', '政務', '等級', '稀有度', '城主', '羈絆']], ['合戰', ['戰力', '兵種相剋', '軍令', '敵軍意圖', '本陣士氣', '預備隊']]];
+  function glossHtml() {
+    return GLOSS_GROUP.map(([h, ks]) => `<h3 class="uk-h">${h}</h3><dl class="gloss">${ks.map(k => `<dt>${k}</dt><dd>${GLOSS[k]}</dd>`).join('')}</dl>`).join('')
+      + `<h3 class="uk-h">技能用語</h3><dl class="gloss">${Object.keys(SKD).map(k => `<dt>${SKN[k]}</dt><dd>${SKD[k]}</dd>`).join('')}</dl>`;
+  }
+  function glossPop(el, k) {
+    let pop = $('#gpop');
+    if (!pop) { pop = document.createElement('div'); pop.id = 'gpop'; pop.className = 'gpop'; pop.setAttribute('role', 'tooltip'); document.body.appendChild(pop); }
+    pop.innerHTML = `<b>${k}</b>${GLOSS[k]}`; pop.hidden = false; pop.dataset.k = k;
+    const r = el.getBoundingClientRect(), w = Math.min(320, window.innerWidth - 24);
+    pop.style.width = w + 'px';
+    pop.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + 'px';
+    pop.style.top = (r.bottom + 8 + pop.offsetHeight > window.innerHeight ? Math.max(8, r.top - 8 - pop.offsetHeight) : r.bottom + 8) + 'px';
+  }
+  function showGen(id) {
+    const g = GEN[id]; if (!g) return;
+    const inRun = !!(S && !S.over && S.gens.includes(id));
+    const sv = k => inRun ? stat(id, k) : g[k];
+    const w = sv('w'), c = sv('c'), a = sv('a'), lv = inRun ? lvOf(id) : 0, m = inRun ? (S.merit || {})[id] || 0 : 0;
+    const lordOf = inRun ? Object.keys(S.lords || {}).find(p => S.lords[p] === id) : null;
+    const wp = Math.round((w - 50) / 150 * 100);
+    const row = (n, v, txt) => `<div class="gd-st"><b>${n}</b><span class="bar2"><span style="width:${Math.min(100, v)}%"></span></span><span class="num">${v}</span><p>${txt}</p></div>`;
+    const syns = SYN.filter(s => s.req && s.req.includes(id));
+    const prev = document.activeElement;
+    let dlg = $('#gdlg');
+    if (!dlg) { dlg = document.createElement('div'); dlg.id = 'gdlg'; document.body.appendChild(dlg); }
+    dlg.innerHTML = `<div class="gd-box" role="dialog" aria-modal="true" aria-label="${g.n}的詳細資料">
+      <button class="btn btn-sm gd-x" aria-label="關閉">✕</button>
+      <div class="gd-hd">${portrait(g, true)}<div>
+        <div class="kicker">${FAC[g.home].n}${g.home === 'kokujin' ? '' : '家'}・<span class="stars">${stars(g.r)}</span></div>
+        <h2>${g.n}</h2>
+        <div class="fine">${lifeText(g)}${g.unk || !S ? '' : `・今年 ${Math.floor(S.year) - g.b} 歲`}</div>
+        ${inRun ? `<div class="gd-lv">Lv${lv}・${LV_TITLE[lv]}<span class="fine">　功勳 ${m}${lv < 5 ? ` / 升級需要 ${LV_NEED[lv + 1]}` : '（已達最高）'}</span></div><div class="gd-role">${lordOf ? `${TMap.byId[lordOf].n}城主（不能上戰場）` : '可以出陣'}</div>` : ''}
+      </div></div>
+      <p class="gd-bio">${esc(g.bio)}</p>
+      <h3>能力${inRun && lv > 1 ? ' <small class="fine">（含升級加成）</small>' : ''}</h3>
+      ${row('武勇', w, `擔任一路大將時，那一路戰力 <b>${wp >= 0 ? '+' : '−'}${Math.abs(wp)}%</b>（武勇 50 不加不減，沒有大將 −15%）。當城主時，敵國較難反攻得手。`)}
+      ${row('智謀', c, (c >= 60 ? '可以下「誘敵」軍令。' : `還不能下「誘敵」軍令（需要 60，差 ${60 - c}）。`) + (c >= 80 ? '智謀 80 以上：合戰時能多看穿一路敵軍意圖。' : ''))}
+      ${row('政務', a, `當城主時，每回合收入 <b>+${Math.floor(a / 15)} 金</b>（政務 ÷ 15）。`)}
+      <p class="fine">調略敵軍的成功率看全軍最高的（智謀＋政務）÷ 2，這位是 ${Math.round((c + a) / 2)}。每升一級，最擅長的能力 +3、其他 +1。</p>
+      <h3>技能「${g.skn}」</h3>
+      <ul class="gd-sk">${g.sk.map(k => `<li><b>${skText([k])}</b>${SKD[k.t] ? `　<span class="fine">${SKN[k.t]}：${SKD[k.t]}</span>` : ''}</li>`).join('')}</ul>
+      ${inRun && lv >= 3 ? `<p class="fine">Lv${lv}：技能效果 ×${skMul(id)}。</p>` : ''}
+      ${syns.length ? `<h3>羈絆</h3><ul class="gd-sk">${syns.map(s => `<li><b>${s.n}</b>（需 ${s.need} 人）　${s.req.map(r => `<span class="${S && S.gens.includes(r) ? 'have' : 'fine'}">${GEN[r].n}</span>`).join('・')}<br><span class="fine">${skText(s.sk)}</span></li>`).join('')}</ul>` : ''}
+    </div>`;
+    dlg.hidden = false;
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+    const close = () => { dlg.hidden = true; document.removeEventListener('keydown', onKey, true); if (prev && prev.focus) prev.focus(); };
+    document.addEventListener('keydown', onKey, true);
+    dlg.onclick = e => { if (e.target === dlg || e.target.closest('.gd-x')) close(); };
+    dlg.querySelector('.gd-x').focus();
+    if (window.TFx && TFx.motion() && window.gsap) gsap.from(dlg.querySelector('.gd-box'), { y: 16, opacity: 0, duration: .25, ease: 'power2.out' });
+  }
+  // 點武將（卡片、頭像、「詳細」）開詳細資料；點狀態列的格子看用語說明
+  document.addEventListener('click', e => {
+    const pop = $('#gpop');
+    const t = e.target.closest('[data-gen]');
+    if (t && !e.target.closest('#gdlg')) { e.preventDefault(); e.stopPropagation(); if (pop) pop.hidden = true; showGen(t.dataset.gen); return; }
+    const q = e.target.closest('[data-gloss]');
+    if (q) { e.preventDefault(); e.stopPropagation(); if (pop && !pop.hidden && pop.dataset.k === q.dataset.gloss) pop.hidden = true; else glossPop(q, q.dataset.gloss); return; }
+    if (pop && !pop.hidden) pop.hidden = true;
+  }, true);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="button"][data-gen], [role="button"][data-gloss]')) { e.preventDefault(); e.target.click(); }
+  });
   function genCard(g) {
     const age = Math.floor(S.year) - g.b, lv = lvOf(g.id), m = (S.merit || {})[g.id] || 0;
     const prog = lv >= 5 ? 100 : Math.round((m - LV_NEED[lv]) / (LV_NEED[lv + 1] - LV_NEED[lv]) * 100);
     const mul = skMul(g.id);
-    return `<div class="gcard r${g.r}">${portrait(g)}
+    return `<div class="gcard r${g.r}" data-gen="${g.id}" role="button" tabindex="0" aria-label="${g.n}的詳細資料">${portrait(g)}
       <div class="nm"><b>${g.n}</b><span class="lv">Lv${lv}・${LV_TITLE[lv]}</span><small>${g.unk ? '' : age + '歲・'}${lifeText(g)}</small></div>
       <div class="sk"><em>${g.skn}</em>　${skText(mul === 1 ? g.sk : g.sk.map(k => k.t === 'risk' || k.v === 1 ? k : { t: k.t, v: k.v < 1 ? Math.round(k.v * mul * 100) / 100 : Math.round(k.v * mul) }))}</div>
-      <div class="stats">${[['武', 'w'], ['智', 'c'], ['政', 'a']].map(([k, s]) => { const v = stat(g.id, s); return `<div>${k}<span class="bar2"><span style="width:${Math.min(100, v)}%"></span></span>${v}</div>`; }).join('')}</div>
+      <div class="stats">${[['武勇', 'w'], ['智謀', 'c'], ['政務', 'a']].map(([k, s]) => { const v = stat(g.id, s); return `<div>${k}<span class="bar2"><span style="width:${Math.min(100, v)}%"></span></span>${v}</div>`; }).join('')}</div>
       <div class="merit" title="功勳 ${m}${lv < 5 ? ` / 下一級 ${LV_NEED[lv + 1]}` : ''}"><span style="width:${prog}%"></span></div></div>`;
   }
   function renderMap() {
@@ -860,7 +953,7 @@
     return `<button class="pcard r${g.r}" data-id="${g.id}" ${dis ? 'disabled' : ''}>${portrait(g)}<b>${g.n}</b><span class="stars">${stars(g.r)}</span>
       <span class="age">${g.unk ? '生卒年不詳' : `${age} 歲・${lifeText(g)}`}</span>
       <span class="sk"><em>${g.skn}</em><br>${skText(g.sk)}</span>
-      <span class="sk">武 ${g.w}・智 ${g.c}・政 ${g.a}</span>${price ? `<span class="price">${price} 金</span>` : ''}</button>`;
+      <span class="sk">武勇 ${g.w}・智謀 ${g.c}・政務 ${g.a}</span><span class="gi-link" data-gen="${g.id}" role="button" tabindex="0">詳細資料 ›</span>${price ? `<span class="price">${price} 金</span>` : ''}</button>`;
   }
   const PRICE = { 1: 35, 2: 70, 3: 130 };
   function shopModal(next) {
@@ -900,7 +993,7 @@
       { t: '祈願', d: `忠誠 +${Math.round(15 * m)}`, eff: { loy: Math.round(15 * m) } },
       { t: '參拜並捐獻', d: `威望 +${Math.round(10 * m)}`, eff: { pres: Math.round(10 * m) } }
     ];
-    if (S.fac === 'tokugawa') opts.push({ t: '靜坐、忍耐', d: '忍 +25', eff: { gauge: 25 } });
+    if (S.fac === 'tokugawa') opts.push({ t: '靜坐、忍耐', d: '忍耐 +25', eff: { gauge: 25 } });
     openModal(`${sceneHead('temple', '', yearLabel(S.year))}<div class="sheet-body"><div class="kicker">寺社</div><h2>古剎的鐘聲</h2>
       <p class="story">連年征戰之後，難得能停下腳步。${m > 1 ? '茶人的陪伴讓這段時光格外寧靜（效果 ×1.5）。' : ''}</p>
       <div class="choices">${opts.map((o, i) => `<button class="choice" data-i="${i}"><b>${o.t}</b><small>${o.d}</small></button>`).join('')}</div></div>`);
@@ -997,8 +1090,9 @@
     let cands = shuffle(frontier()).slice(0, 4);
     if (!cands.length) cands = [pick(TMap.PROV.filter(p => S.owners[p.id] !== S.fac && p.id !== 'ezo')).id];
     const info = cands.map(t => ({ t, ep: enemyStrength() }));
-    let sel = null;
+    let sel = null, selMap = null;
     const draw = () => {
+      const selView = selMap && selMap.getView();
       openModal(`<div class="sheet-body"><div class="kicker">合戰</div><h2>選擇攻打目標</h2>
         <p class="story">斥候回報了邊境各國的情況。點地圖上標了數字的國，或從下方清單選擇。</p>
         <div class="selmap"><svg id="selmap" role="img" aria-label="可以攻打的國"></svg></div>
@@ -1008,11 +1102,11 @@
         }).join('')}
           <button class="choice" data-t=""><b>按兵不動</b><small>這次不出兵（威望 -3）</small></button></div>
         <div class="actions"><button class="btn btn-shu" id="m-ok" ${sel ? '' : 'disabled'}>${sel ? `出兵：${TMap.byId[sel].n}` : '請先選擇目標'}</button></div></div>`, { quiet: true, keepScroll: true });
-      const m = TMap.buildMap($('#selmap'), { id: 'sel' });
+      const m = selMap = TMap.buildMap($('#selmap'), { id: 'sel', pan: true });
       m.setOwners(S.owners, COLORS, S.fac);
       m.highlight(sel ? [sel] : cands);
       m.marks(info.map((c, i) => ({ lon: TMap.byId[c.t].lon, lat: TMap.byId[c.t].lat, label: `${i + 1}` })));
-      m.setView(m.boxFor(cands.concat(myProvs().filter(p => cands.some(c => TMap.NEI[c].has(p)))), 110), false);
+      m.setView(selView || m.boxFor(cands.concat(myProvs().filter(p => cands.some(c => TMap.NEI[c].has(p)))), 110), false);
       m.onClick(pid => { if (cands.includes(pid)) { sel = pid; draw(); } });
       document.querySelectorAll('#modal .choice').forEach(b => b.onclick = () => {
         if (!b.dataset.t) { S.pres = Math.max(0, S.pres - 3); refresh(); return next(); }
@@ -1125,6 +1219,30 @@
     const wx = ty => { const w = weather(); return w === 'rain' && ty === 'gun' ? .4 : w === 'snow' && ty === 'cav' ? .8 : 1; };
     const defType = S.fac === 'takeda' ? 'cav' : 'spear';
     const our = [0, 1, 2].map(() => ({ g: null, type: defType, pct: 30, troops: 0, t0: 0, order: 'atk', broken: false }));
+    // 戰力＝兵力×各項加成（不含軍令與敵軍意圖）；布陣畫面、回合畫面與戰報共用
+    const powerOf = (i, troops) => {
+      const l = our[i], f = foe[i], parts = [];
+      const x = (t, v) => { if (Math.abs(v - 1) > .001) parts.push({ t, v }); return v; };
+      const terr = ty => ty !== 'cav' ? 1 : def.terrain === 'mountain' ? .8 : def.terrain === 'plain' ? 1.15 : 1;
+      const ctr = (a, b, ours) => BEATS[a] === b ? (a === 'gun' && ours && S.fac === 'oda' ? 1.7 : 1.5) : BEATS[b] === a ? .7 : 1;
+      const c = ctr(l.type, f.type, true), ut = ty => UT[ty].n.slice(0, 2);
+      let p = troops;
+      p *= x(l.g ? `大將武勇 ${stat(l.g, 'w')}` : '沒有大將', l.g ? 1 + (stat(l.g, 'w') - 50) / 150 : .85);
+      p *= x(c > 1 ? `${ut(l.type)}剋${ut(f.type)}` : `被${ut(f.type)}剋`, c);
+      p *= x(`${FORMS[st.form].n}之陣`, FORMS[st.form].m[i]);
+      p *= x(def.terrain === 'mountain' ? '山地騎馬不利' : '平原騎馬有利', terr(l.type));
+      p *= x(weather() === 'rain' ? '雨天鐵砲受潮' : '雪地騎馬遲緩', wx(l.type));
+      if (l.type === 'gun') p *= x('鐵砲技能', 1 + bonus('gun'));
+      const fp = f.troops * ctr(f.type, l.type, false) * terr(f.type) * FORMS[foeForm].m[i] * wx(f.type);
+      return { p, fp, parts };
+    };
+    const pctTxt = v => `${v > 1 ? '+' : '−'}${Math.round(Math.abs(v - 1) * 100)}%`;
+    const powHtml = (i, troops) => {
+      if (our[i].broken || foe[i].broken) return '';
+      if (troops <= 0) return '<div class="ln-pow"><span class="fine">沒有分配兵力，這一路會直接潰走。</span></div>';
+      const pw = powerOf(i, troops), r = pw.p / (pw.p + pw.fp), cls = r >= .58 ? 'good' : r <= .42 ? 'bad' : '';
+      return `<div class="ln-pow"><span class="pw-bar" aria-hidden="true"><span style="width:${Math.round(r * 100)}%"></span></span><b class="pw-t ${cls}">${r >= .58 ? '優勢' : r <= .42 ? '劣勢' : '勢均力敵'}</b><span class="pw-n num" title="我軍戰力 : 敵軍戰力">戰力 ${fmt(Math.round(pw.p))} : ${fmt(Math.round(pw.fp))}</span>${pw.parts.map(q => `<span class="pw-f ${q.v > 1 ? 'up' : 'dn'}">${q.t} ${pctTxt(q.v)}</span>`).join('')}</div>`;
+    };
     const lordSet = Object.values(S.lords || {});
     const fieldGens = S.gens.filter(g => !lordSet.includes(g));
     const gs = fieldGens.slice().sort((a, b) => stat(b, 'w') - stat(a, 'w'));
@@ -1209,9 +1327,9 @@
     const colSetup = i => {
       const l = our[i];
       return `<div class="col"><div class="col-h">${LANE[i]}</div>
-        <select class="ln-gen" data-i="${i}" aria-label="${LANE[i]}的大將"><option value="">無大將</option>${fieldGens.map(g => `<option value="${g}" ${l.g === g ? 'selected' : ''}>${GEN[g].n}</option>`).join('')}</select>
+        <select class="ln-gen" data-i="${i}" aria-label="${LANE[i]}的大將"><option value="">無大將</option>${fieldGens.map(g => `<option value="${g}" ${l.g === g ? 'selected' : ''}>${GEN[g].n}（武勇 ${stat(g, 'w')}・智謀 ${stat(g, 'c')}）</option>`).join('')}</select>${l.g ? `<button class="btn btn-sm gi" data-gen="${l.g}" aria-label="${GEN[l.g].n}的詳細資料">詳細</button>` : ''}
         <div class="uts">${['cav', 'spear', ...(canGun() ? ['gun'] : [])].map(ty => `<button class="ut ${l.type === ty ? 'on' : ''}" data-i="${i}" data-ty="${ty}" aria-label="${UT[ty].n}" title="${UT[ty].n}">${TArt.unitIcon(ty)}</button>`).join('')}</div>
-        <div class="pct"><button class="pm" data-i="${i}" data-d="-10" aria-label="減少${LANE[i]}兵力">−</button><span class="num">${l.pct}%</span><button class="pm" data-i="${i}" data-d="10" aria-label="增加${LANE[i]}兵力">＋</button></div></div>`;
+        <div class="pct"><button class="pm" data-i="${i}" data-d="-10" aria-label="減少${LANE[i]}兵力">−</button><span class="num">${l.pct}%</span><button class="pm" data-i="${i}" data-d="10" aria-label="增加${LANE[i]}兵力">＋</button></div>${powHtml(i, Math.round(T * l.pct / 100))}</div>`;
     };
 
     const setup = () => {
@@ -1224,7 +1342,7 @@
         ${svgField('setup')}
         <div class="bf-ctl3">${[0, 1, 2].map(colSetup).join('')}</div>
         <div class="bf-foot"><span class="fine">預備隊 ${resPct}%${def.terrain === 'mountain' ? '・山地：騎馬不利' : def.terrain === 'plain' ? '・平原：騎馬有利' : ''}</span><button class="btn btn-shu" id="bf-go">開戰</button></div>
-        <details class="bf-help"><summary>怎麼布陣？</summary><p>三路各派大將、選兵種、分配兵力，剩下的兵力是預備隊。照相剋克制敵人：鐵砲克騎馬、騎馬克長槍、長槍克鐵砲（綠色▲代表有利）。</p><p class="fine">${FORMS[st.form].hist}</p></details>
+        <details class="bf-help"><summary>怎麼布陣？</summary><p>三路各派大將、選兵種、分配兵力，剩下的兵力是預備隊。照相剋克制敵人：鐵砲克騎馬、騎馬克長槍、長槍克鐵砲（綠色▲代表有利）。</p><p>每一路下方的長條是雙方「戰力」比較：戰力＝兵力 × 各項加成，加成會一項一項列出來，例如大將武勇 88 是 +25%（武勇 50 不加不減，沒有大將 −15%）。這裡還沒算進每回合的軍令和敵軍意圖。</p><p class="fine">${FORMS[st.form].hist}</p></details>
       </div>`, { quiet: true, keepScroll: true });
       document.querySelectorAll('#modal .form').forEach(b => b.onclick = () => { st.form = b.dataset.f; setup(); });
       document.querySelectorAll('#modal .ut').forEach(b => b.onclick = () => { our[+b.dataset.i].type = b.dataset.ty; setup(); });
@@ -1279,17 +1397,18 @@
       if (S.fac === 'takeda' && !st.furinUsed) L.push({ key: 'furin', n: '風林火山', d: '本回合全軍攻擊 +40%（每戰一次）' });
       if (S.fac === 'uesugi' && !st.biUsed) L.push({ key: 'bi', n: '毘沙門天的加護', d: '本回合「進攻」的各路不會被敵軍固守或射擊壓制（每戰一次）' });
       if (S.fac === 'oda' && !st.sanUsed && our.some(l => l.type === 'gun' && !l.broken)) L.push({ key: 'san', n: '鐵砲輪射', d: '本回合鐵砲隊攻擊 ×1.8（每戰一次）' });
-      if (S.fac === 'tokugawa' && S.gauge >= 100) L.push({ key: 'burst', n: '忍耐爆發', d: '本回合我軍不受任何損失（消耗忍 100）' });
+      if (S.fac === 'tokugawa' && S.gauge >= 100) L.push({ key: 'burst', n: '忍耐爆發', d: '本回合我軍不受任何損失（消耗忍耐 100）' });
       return L;
     }
 
     const colRound = i => {
       const l = our[i];
       if (l.broken) return `<div class="col"><div class="col-h">${LANE[i]}</div><span class="fine">潰走</span></div>`;
-      return `<div class="col"><div class="col-h">${LANE[i]}</div><div class="ords">${Object.keys(ORD).map(k => {
-        const dis = k === 'feint' && !(l.g && stat(l.g, 'c') >= 60);
+      const noFeint = !(l.g && stat(l.g, 'c') >= 60);
+      return `<div class="col"><div class="col-h">${LANE[i]}</div>${l.g ? `<button class="ln-gname" data-gen="${l.g}">${GEN[l.g].n}<small>武勇 ${stat(l.g, 'w')}・智謀 ${stat(l.g, 'c')}</small></button>` : '<span class="ln-gname none">無大將</span>'}<div class="ords">${Object.keys(ORD).map(k => {
+        const dis = k === 'feint' && noFeint;
         return `<button class="ord ${l.order === k ? 'on' : ''}" data-i="${i}" data-o="${k}" ${dis ? 'disabled' : ''} title="${dis ? '誘敵需要智謀 60 以上的大將' : ORD[k]}"><svg viewBox="-16 -16 32 32" class="ord-ic" aria-hidden="true">${TArt.icon(k)}</svg><span>${ORD[k]}</span></button>`;
-      }).join('')}</div></div>`;
+      }).join('')}</div>${noFeint ? `<span class="fine ln-why">誘敵需要智謀 60 以上的大將${l.g ? `（目前 ${stat(l.g, 'c')}）` : ''}</span>` : ''}${powHtml(i, l.troops)}</div>`;
     };
     const roundView = () => {
       const plans = planList();
@@ -1382,10 +1501,7 @@
         else if (plan === 'san') { st.sanUsed = true; gunMul = 1.8; st.log.push({ c: 'ok', t: '鐵砲隊輪番射擊，槍聲不絕！' }); }
         else if (plan === 'burst') { S.gauge = 0; lossMul = 0; st.log.push({ c: 'ok', t: '你咬緊牙關，全軍穩住陣腳：本回合毫無損失！' }); }
       }
-      const tm = def.terrain === 'mountain' ? { cav: .8 } : def.terrain === 'plain' ? { cav: 1.15 } : {};
-      const fm = FORMS[st.form].m, hqMul = FORMS[st.form].hqMul || 1;
-      const gm = id => id ? 1 + (stat(id, 'w') - 50) / 150 : .85;
-      const ctr = (a, b, ours) => BEATS[a] === b ? (a === 'gun' && ours && S.fac === 'oda' ? 1.7 : 1.5) : BEATS[b] === a ? .7 : 1;
+      const hqMul = FORMS[st.form].hqMul || 1;
       let sumFoe = 0, sumUs = 0;
       [0, 1, 2].forEach(i => {
         const l = our[i], f = foe[i];
@@ -1404,12 +1520,13 @@
         if (noPenalty && l.order === 'atk') { mx[0] = Math.max(mx[0], 1); mx[1] = Math.min(mx[1], 1); }
         if (l.type === 'cav' && f.intent === 'shoot' && l.order === 'atk') mx[1] *= .85;
         if (f.known && f.shown !== f.intent) st.log.push({ c: 'ng', t: `敵將虛晃一招！${LANE[i]}其實是「${INTENT[f.intent]}」。` });
-        const ourP = l.troops * ctr(l.type, f.type, true) * fm[i] * gm(l.g) * (tm[l.type] || 1) * atkMul * wx(l.type) * (l.order === 'feint' && weather() === 'mist' ? 1.25 : 1)
-          * (l.type === 'gun' ? gunMul * (1 + bonus('gun')) : 1)
+        const pw = powerOf(i, l.troops);
+        const ourP = pw.p * atkMul * (l.order === 'feint' && weather() === 'mist' ? 1.25 : 1)
+          * (l.type === 'gun' ? gunMul : 1)
           * (l.order === 'atk' ? 1 + bonus('atk') + (S.fac === 'uesugi' ? .1 : 0) : 1)
           * (l.order === 'feint' ? 1 + bonus('amb') : 1)
           * (bonus('lowhp') && l.troops < l.t0 * .4 ? 1.3 : 1);
-        const foeP = f.troops * ctr(f.type, l.type, false) * (tm[f.type] || 1) * (f.intent === 'hold' && def.terrain === 'mountain' ? 1.15 : 1) * FORMS[foeForm].m[i] * wx(f.type);
+        const foeP = pw.fp * (f.intent === 'hold' && def.terrain === 'mountain' ? 1.15 : 1);
         const toFoe = Math.round(Math.min(ourP * .17 * mx[0] * (.9 + rnd() * .2) * (FORMS[foeForm].lossMul || 1), f.t0 * .45 * Math.max(mx[0], .3)));
         const toUs = Math.round(Math.min(foeP * .17 * mx[1] * (.9 + rnd() * .2) * lossMul * (survive && bonus('siege') ? .8 : 1), l.t0 * (def.cap || .45) * Math.max(mx[1], .3)));
         f.troops = Math.max(0, f.troops - toFoe); l.troops = Math.max(0, l.troops - toUs);
@@ -1417,7 +1534,7 @@
         fx.lanes[i] = { toFoe, toUs, order: l.order, intent: f.intent, ourType: l.type };
         if (l.order === 'atk' && l.type === 'gun') fx.gun = true;
         if (l.order === 'atk' && l.type === 'cav') fx.charge = true;
-        st.log.push({ c: toFoe >= toUs ? 'ok' : 'ng', t: `${LANE[i]}：我軍${ORD[l.order]}、敵軍${INTENT[f.intent]}——敵 -${fmt(toFoe)}，我 -${fmt(toUs)}。` });
+        st.log.push({ c: toFoe >= toUs ? 'ok' : 'ng', t: `${LANE[i]}：我軍${ORD[l.order]}、敵軍${INTENT[f.intent]}——敵 -${fmt(toFoe)}，我 -${fmt(toUs)}。${pw.parts.length ? `（${pw.parts.map(q => q.t + ' ' + pctTxt(q.v)).join('、')}）` : ''}` });
         if (l.g && toFoe > toUs) gainMerit(l.g, def.boss ? 2 : 1);
         if (f.troops < f.t0 * .25) { f.broken = true; st.hq.foe -= 25; st.log.push({ c: 'ok', t: `敵方${LANE[i]}潰走了！敵本陣士氣 -25。` }); }
         if (l.troops < l.t0 * .25) { l.broken = true; st.hq.our -= Math.round(25 * hqMul); st.log.push({ c: 'ng', t: `我方${LANE[i]}潰走了！本陣士氣 -${Math.round(25 * hqMul)}。` }); }
@@ -1551,7 +1668,7 @@
         const sorted = GENS.slice().sort((a, b) => a.b - b.b);
         body = `<p class="fine">已遇見 ${META.seen.gens.length} / ${GENS.length} 位。依出生年排列——看看誰和誰是同一個時代的人。</p><div class="cgrid">${sorted.map(g => {
           const ok = META.seen.gens.includes(g.id);
-          return ok ? `<div class="centry"><div class="hd">${portrait(g)}<div><h4>${g.n}　<span class="stars">${stars(g.r)}</span></h4><div class="yrs">${lifeText(g)}・${FAC[g.home].n}${g.home === 'kokujin' ? '' : '家'}・遊戲中 ${Math.floor(g.from)} 年起登場</div></div></div><p><b class="brush">${g.skn}</b>　${skText(g.sk)}</p><p>${esc(g.bio)}</p></div>`
+          return ok ? `<div class="centry"><div class="hd" data-gen="${g.id}" role="button" tabindex="0" title="詳細資料">${portrait(g)}<div><h4>${g.n}　<span class="stars">${stars(g.r)}</span></h4><div class="yrs">${lifeText(g)}・${FAC[g.home].n}${g.home === 'kokujin' ? '' : '家'}・遊戲中 ${Math.floor(g.from)} 年起登場</div></div></div><p><b class="brush">${g.skn}</b>　${skText(g.sk)}</p><p>${esc(g.bio)}</p></div>`
             : `<div class="centry unseen"><div class="hd"><div class="face" style="background:var(--line);display:grid;place-items:center;font-family:var(--f-brush);font-size:1.4rem;color:var(--paper)">？</div><div><h4>？？？</h4><div class="yrs">${lifeText(g)}</div></div></div><p>尚未遇見。</p></div>`;
         }).join('')}</div>`;
       } else if (tab === 'geo') {
@@ -1565,6 +1682,8 @@
       } else if (tab === 'ev') {
         const all = EVENTS.filter(e => META.seen.ev.includes(e.id));
         body = all.length ? `<div class="cgrid">${all.map(e => `<div class="centry"><h4>${esc(e.t)}</h4><p>${esc(e.hist)}</p></div>`).join('')}</div>` : '<p class="fine">還沒有遇到任何事件。</p>';
+      } else if (tab === 'gloss') {
+        body = `<p class="fine">遊戲裡的名詞與數值是什麼意思。遊戲中點上方的兵力、金錢等格子，或點武將卡片，也能看到說明。</p>${glossHtml()}`;
       } else if (tab === 'art') {
         body = TUki.galleryHtml() + `<h3 class="uk-h">背景音樂</h3><p class="fine">音樂是開放授權（創用 CC）的錄音，為了讓遊戲載入快一點，重新壓縮成 96 kbps。關掉聲音再打開，或音檔載入失敗時，遊戲會改用即時合成的古箏與太鼓。</p>
           <div class="cgrid">${TAudio.CREDITS.map(c => `<div class="centry"><h4>${esc(c.t)}　<small class="fine">${c.use}</small></h4><p>${esc(c.a)}・<a href="${c.url}" target="_blank" rel="noopener">${c.src} ↗</a></p><p>授權：<a href="https://creativecommons.org/licenses/by/${c.lic.slice(6)}/" target="_blank" rel="noopener">${c.lic}</a></p></div>`).join('')}</div>`;
@@ -1580,7 +1699,7 @@
       }
       screen().innerHTML = `<div class="page gutter"><div class="page-in">
         <div class="page-head"><h2>戰國圖鑑</h2><button class="btn btn-sm" id="c-back">← 返回</button></div>
-        <div class="ctabs">${[['gens', '武將'], ['treas', '名物'], ['syn', '羈絆'], ['ev', '事件'], ['geo', '地理'], ['tl', '年表'], ['art', '出處']].map(([k, n]) => `<button class="${tab === k ? 'on' : ''}" data-t="${k}">${n}</button>`).join('')}</div>
+        <div class="ctabs">${[['gens', '武將'], ['treas', '名物'], ['syn', '羈絆'], ['ev', '事件'], ['geo', '地理'], ['tl', '年表'], ['gloss', '用語'], ['art', '出處']].map(([k, n]) => `<button class="${tab === k ? 'on' : ''}" data-t="${k}">${n}</button>`).join('')}</div>
         ${body}</div></div>`;
       document.querySelectorAll('.ctabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
       $('#c-back').onclick = back;

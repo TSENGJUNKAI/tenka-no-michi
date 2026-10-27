@@ -160,12 +160,17 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .node-name { position: absolute; transform: translate(-50%, 0); font-size: .8rem; font-family: var(--f-brush); white-space: nowrap; color: var(--shu); }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 10px 16px 16px; border-top: 1px solid var(--line); font-size: .78rem; color: var(--ink2); }
 .legend span b { font-family: var(--f-brush); font-weight: 400; margin-right: 3px; }
+.legend span[data-gloss] { cursor: help; }
 
 .mapwrap { position: relative; background: var(--sea); min-width: 0; min-height: 0; overflow: hidden; }
 .mapwrap > svg { width: 100%; height: 100%; display: block; }
 .mapctl { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
 .mapctl .btn { background: var(--paper); font-size: .85rem; padding: .25em .7em; }
 .mapctl .btn:hover { background: var(--ink); }
+.maphint { position: absolute; right: 12px; top: 54px; pointer-events: none; background: color-mix(in srgb, var(--paper) 80%, transparent); padding: 1px 8px; border-radius: 2px; }
+svg.pannable { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+svg.pannable.dragging { cursor: grabbing; }
+svg.pannable.dragging .cell { cursor: grabbing; }
 .mapinfo { position: absolute; left: 12px; bottom: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
 .mapinfo span { background: var(--paper); border: 1px solid var(--line); padding: 2px 8px; font-size: .78rem; display: inline-flex; gap: 6px; align-items: center; }
 .mapinfo i { width: 10px; height: 10px; display: inline-block; border-radius: 1px; }
@@ -528,7 +533,7 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .bf-ctl3 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .col { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; padding: 4px 8px; border-left: 3px solid var(--line); background: var(--paper2); }
 .col-h { font-family: var(--f-brush); font-size: .95rem; color: var(--ink); letter-spacing: .1em; width: 3em; flex: none; }
-.col .ln-gen { width: auto; max-width: 9em; }
+.col .ln-gen { width: auto; max-width: 15em; }
 .col .uts, .col .ords { display: flex; gap: 4px; }
 .col .pct { margin-left: auto; }
 .ut { padding: 2px 5px; }
@@ -706,6 +711,51 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 .uk-lb figcaption b { font-size: 1.1rem; }
 .uk-lb .btn { position: absolute; top: 14px; right: 14px; }
 @media (max-width: 560px) { .scene-box .uk-cap { display: none; } .uk-row img { height: 150px; } }
+/* 武將詳細資料、用語說明、合戰戰力 */
+.chip[data-gloss] { cursor: help; }
+.chip[data-gloss]:hover { border-color: rgba(241, 232, 211, .55); }
+.gcard[data-gen], .centry .hd[data-gen] { cursor: pointer; }
+.gcard[data-gen]:hover { border-color: var(--ink3); }
+.gi-link { font-size: .78rem; color: var(--shu); text-decoration: underline; text-underline-offset: 3px; }
+#gdlg { position: fixed; inset: 0; z-index: 60; background: var(--veil); display: grid; place-items: center; padding: 12px; }
+#gdlg[hidden] { display: none; }
+.gd-box { position: relative; width: min(560px, 100%); max-height: 100%; overflow: auto; background: var(--paper); border-radius: 3px; padding: 20px 22px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.6); }
+.gd-box h2 { margin: 2px 0; font-family: var(--f-brush); }
+.gd-box h3 { font-family: var(--f-brush); font-size: 1rem; margin: 16px 0 6px; border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+.gd-x { position: absolute; top: 10px; right: 10px; }
+.gd-hd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; padding-right: 36px; }
+.gd-lv { font-size: .9rem; margin-top: 4px; }
+.gd-role { font-size: .82rem; color: var(--ink2); }
+.gd-bio { font-size: .9rem; color: var(--ink2); margin: 14px 0 0; }
+.gd-st { display: grid; grid-template-columns: 3em minmax(0, 1fr) 2.4em; gap: 2px 10px; align-items: center; margin: 8px 0; }
+.gd-st b { font-family: var(--f-brush); }
+.gd-st .bar2 { height: 6px; background: var(--line); position: relative; }
+.gd-st .bar2 span { position: absolute; inset: 0 auto 0 0; background: var(--shu); }
+.gd-st .num { text-align: right; font-weight: 700; }
+.gd-st p { grid-column: 2 / -1; margin: 0; font-size: .84rem; color: var(--ink2); line-height: 1.5; }
+.gd-sk { margin: 0; padding-left: 1.1em; font-size: .88rem; display: grid; gap: 6px; }
+.gd-sk .have { color: var(--ok); font-weight: 700; }
+.gpop { position: fixed; z-index: 70; background: var(--paper); color: var(--ink); border: 1px solid var(--ink3); border-radius: 3px; padding: 10px 12px; font-size: .84rem; line-height: 1.55; box-shadow: 0 10px 30px -8px rgba(0,0,0,.5); }
+.gpop[hidden] { display: none; }
+.gpop b { display: block; font-family: var(--f-brush); margin-bottom: 2px; }
+.gloss { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; font-size: .9rem; }
+.gloss dt { font-family: var(--f-brush); font-weight: 700; }
+.gloss dd { margin: 0; color: var(--ink2); }
+@media (max-width: 560px) { .gloss { grid-template-columns: 1fr; gap: 0; } .gloss dd { margin-bottom: 8px; } .gd-box { padding: 16px; } .gd-hd .face.lg { width: 72px; height: 72px; } }
+.ln-gname { font: inherit; font-size: .82rem; background: none; border: 1px solid var(--line); border-radius: 2px; padding: 1px 8px; color: var(--ink); cursor: pointer; display: grid; line-height: 1.25; text-align: left; }
+.ln-gname small { font-size: .72rem; color: var(--ink3); }
+.ln-gname.none { border-style: dashed; color: var(--ink3); cursor: default; }
+.ln-why { font-size: .72rem; }
+.col .gi { padding: 1px 8px; font-size: .74rem; }
+.ln-pow { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: .74rem; color: var(--ink2); }
+.pw-bar { width: 90px; height: 6px; background: var(--bad); position: relative; border-radius: 1px; flex: none; }
+.pw-bar span { position: absolute; inset: 0 auto 0 0; background: var(--ok); }
+.pw-t { font-family: var(--f-brush); color: var(--ink); }
+.pw-t.good { color: var(--ok); }
+.pw-t.bad { color: var(--bad); }
+.pw-f { border: 1px solid var(--line); border-radius: 2px; padding: 0 5px; white-space: nowrap; }
+.pw-f.up { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.pw-f.dn { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
 </style>
 </head>
 <body>
@@ -715,13 +765,13 @@ h1, h2, h3 { font-family: var(--f-brush); font-weight: 700; text-wrap: balance; 
 <div id="modal" hidden></div>
 <div id="toasts" aria-live="polite"></div>
 
-<script src="map.js?v=8f"></script>
-<script src="data.js?v=8f"></script>
-<script src="art.js?v=8f"></script>
+<script src="map.js?v=8g"></script>
+<script src="data.js?v=8g"></script>
+<script src="art.js?v=8g"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="fx.js?v=8f"></script>
-<script src="audio.js?v=8f"></script>
-<script src="ukiyo.js?v=8f"></script>
-<script src="game.js?v=8f"></script>
+<script src="fx.js?v=8g"></script>
+<script src="audio.js?v=8g"></script>
+<script src="ukiyo.js?v=8g"></script>
+<script src="game.js?v=8g"></script>
 </body>
 </html>
