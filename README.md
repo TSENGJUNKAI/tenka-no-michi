@@ -20,8 +20,8 @@
 - **戰國圖鑑與年表**：遇過的武將、事件會永久收錄，年表依你經歷過的事件逐一點亮。
 - **美術與動畫**：每位武將都有依甲冑特徵繪製的肖像（伊達的新月、本多的鹿角、直江的「愛」字……）；情景插畫隨季節（春櫻、秋楓、冬雪）與時段變化；以 [GSAP](https://gsap.com/) 製作捲軸展開、章節標題、合戰特效與勝敗朱印。遊戲內可切換動畫開關。
 - **新手教學與對話**：第一次合戰有逐步引導；事件改成一句一句出現的對話，附說話者肖像。
-- **浮世繪**：主君肖像、歷史決戰與天下大事的插畫，換成江戶末期到明治時代的武者繪（歌川國芳、月岡芳年等），點圖可以放大；結局畫面會附上「後來的歷史」。圖鑑的「浮世繪」頁列出每幅圖的出處。
-- **音樂與音效**：以 Web Audio 即時合成古箏、太鼓、尺八（都節音階），不需要任何音檔。
+- **浮世繪**：主君肖像、歷史決戰與天下大事的插畫，換成江戶末期到明治時代的武者繪（歌川國芳、月岡芳年等），點圖可以放大；結局畫面會附上「後來的歷史」。圖鑑的「出處」頁列出每幅圖與每首音樂的來源。
+- **音樂與音效**：平時、合戰、決戰前各有一首開放授權的背景音樂（太鼓與和風旋律），換場時交叉淡入淡出；音效以 Web Audio 即時合成。音檔載入失敗時改用合成的古箏、太鼓、尺八（都節音階）。
 - 手繪令制國地圖，支援深色模式與手機。
 
 ## 怎麼玩
@@ -42,9 +42,10 @@
 | `data.js` | 遊戲內容：勢力、武將、名物、羈絆、戰役、事件 |
 | `art.js` | 家紋、武將肖像與情景插畫 |
 | `fx.js` | 動畫效果（GSAP） |
-| `audio.js` | 背景音樂與音效（Web Audio 合成） |
+| `audio.js` | 背景音樂（播放 `music/`，備用合成）與音效 |
 | `ukiyo.js` | 浮世繪目錄：出處、肖像裁切、對應的合戰與事件 |
 | `img/` | 浮世繪縮圖（公有領域） |
+| `music/` | 背景音樂（創用 CC 授權） |
 | `game.js` | 遊戲流程、合戰、存檔與圖鑑 |
 
 ## 圖片出處
@@ -76,6 +77,16 @@
 | 月百姿　志津嶽月 | 月岡芳年 | 1888 | [Commons](https://commons.wikimedia.org/wiki/File:Hideyoshi_en_de_maan_te_Shizugatake-Rijksmuseum_RP-P-1989-218.jpeg) |
 | 嚴島合戰 | 歌川貞秀 | 約 1850 | [Commons](https://commons.wikimedia.org/wiki/File:Battle_Itsukushima.jpg) |
 | 天目山 武田勝賴戰死 | 二代 歌川國輝 | 1861 | [Commons](https://commons.wikimedia.org/wiki/File:Utagawa_Kuniteru_II_-_The_Death_in_Battle_of_Katsuyori_on_Mount_Tenmoku.jpg) |
+
+## 音樂出處
+
+`music/` 裡的三首曲子都是創用 CC 姓名標示授權，為了讓遊戲載入快一點，重新壓縮成 96 kbps MP3。
+
+| 檔案 | 用途 | 曲名與作者 | 授權 |
+|---|---|---|---|
+| `calm.mp3` | 平時（地圖、事件） | "Ishikari Lore" Kevin MacLeod ([incompetech.com](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100192)) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) |
+| `battle.mp3` | 合戰 | "Taiko drums (seamless loop)" by jobro ([freesound.org](https://freesound.org/people/jobro/sounds/112248/))，由 congusbongus 剪成循環（[OpenGameArt](https://opengameart.org/content/taiko-drums-seamless-loop)） | [CC BY 3.0](http://creativecommons.org/licenses/by/3.0/) |
+| `tense.mp3` | 歷史決戰前、危急時 | "Asian Drums" Kevin MacLeod ([incompetech.com](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100396)) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) |
 
 ## 關於史實
 

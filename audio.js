@@ -1,4 +1,5 @@
-// 天下之道 — 音樂與音效：以 Web Audio 即時合成古箏、太鼓、尺八，不需要任何音檔
+// 天下之道 — 音樂與音效：背景音樂播放 music/ 裡的開放授權錄音（出處見圖鑑），
+// 音檔載入失敗時改用 Web Audio 即時合成的古箏、太鼓、尺八；音效一律即時合成
 window.TAudio = (function () {
   let ctx = null, master, music, sfxBus, noiseBuf, on = false, mood = null, timer = null, nextT = 0, step = 0, bar = 0;
   try { on = localStorage.getItem('tenka.sound') === 'on'; } catch (e) { }
@@ -109,22 +110,67 @@ window.TAudio = (function () {
   }
   function stopLoop() { clearInterval(timer); timer = null; }
 
-  function play(m) {
-    if (mood === m && timer) return;
-    mood = m;
-    if (!on || !ctx) return;
+  // ───── 錄音音軌：三種曲風各一首，循環播放、換曲時交叉淡入淡出 ─────
+  // 出處（圖鑑「出處」頁與 README 都列出這三首）
+  const CREDITS = [
+    { m: 'calm', t: 'Ishikari Lore', a: 'Kevin MacLeod', src: 'incompetech.com', url: 'https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100192', lic: 'CC BY 4.0', use: '平時（地圖、事件）' },
+    { m: 'battle', t: 'Taiko drums (seamless loop)', a: 'jobro（OpenGameArt 由 congusbongus 剪成循環）', src: 'opengameart.org', url: 'https://opengameart.org/content/taiko-drums-seamless-loop', lic: 'CC BY 3.0', use: '合戰' },
+    { m: 'tense', t: 'Asian Drums', a: 'Kevin MacLeod', src: 'incompetech.com', url: 'https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100396', lic: 'CC BY 4.0', use: '歷史決戰前、危急時' }
+  ];
+  const FILES = { calm: 'music/calm.mp3', battle: 'music/battle.mp3', tense: 'music/tense.mp3' };
+  const VOL = { calm: .5, battle: .42, tense: .55 };
+  const els = {}, failed = {};
+  let fadeT = null;
+  function track(m) {
+    if (!els[m]) {
+      const a = new Audio(FILES[m]); a.loop = true; a.preload = 'auto'; a.volume = 0;
+      a.addEventListener('error', () => { failed[m] = 1; if (mood === m && on) synth(m); });
+      els[m] = a;
+    }
+    return els[m];
+  }
+  function fadeTo(m) {
+    clearInterval(fadeT);
+    fadeT = setInterval(() => {
+      let done = true;
+      Object.keys(els).forEach(k => {
+        const a = els[k], want = k === m ? VOL[k] : 0, d = want - a.volume;
+        if (Math.abs(d) > .03) { a.volume = Math.max(0, Math.min(1, a.volume + Math.sign(d) * .03)); done = false; }
+        else { a.volume = want; if (!want && !a.paused) a.pause(); }
+      });
+      if (done) clearInterval(fadeT);
+    }, 50);
+  }
+  function synth(m) {
+    Object.values(els).forEach(a => a.pause());
+    if (!ensure()) return;
     stopLoop(); music.gain.cancelScheduledValues(ctx.currentTime);
     music.gain.setValueAtTime(.0001, ctx.currentTime); music.gain.exponentialRampToValueAtTime(.3, ctx.currentTime + 1.2);
     startLoop();
   }
+  // 先試錄音；瀏覽器擋自動播放時等使用者點擊（unlock）再播，檔案壞了才改用合成音樂
+  function start(m) {
+    if (failed[m]) return synth(m);
+    stopLoop();
+    const a = track(m);
+    if (a.paused) { const p = a.play(); if (p && p.catch) p.catch(() => { if (a.error) { failed[m] = 1; synth(m); } }); }
+    fadeTo(m);
+  }
+  const playing = m => (els[m] && !els[m].paused) || (failed[m] && timer);
+
+  function play(m) {
+    if (mood === m && playing(m)) return;
+    mood = m;
+    if (on) start(m);
+  }
   function setOn(v) {
     on = v;
     try { localStorage.setItem('tenka.sound', v ? 'on' : 'off'); } catch (e) { }
-    if (v) { if (ensure()) { ctx.resume(); if (mood) { stopLoop(); startLoop(); } } }
-    else { stopLoop(); if (ctx) ctx.suspend(); }
+    if (v) { if (ensure()) ctx.resume(); if (mood) start(mood); }
+    else { stopLoop(); clearInterval(fadeT); Object.values(els).forEach(a => { a.pause(); a.volume = 0; }); if (ctx) ctx.suspend(); }
   }
   // 瀏覽器規定必須在使用者互動後才能播放聲音
-  function unlock() { if (on && ensure()) { ctx.resume(); if (mood && !timer) startLoop(); } }
+  function unlock() { if (!on) return; if (ensure()) ctx.resume(); if (mood && !playing(mood)) start(mood); }
 
   function sfx(name) {
     if (!on || !ensure() || ctx.state !== 'running') return;
@@ -142,5 +188,5 @@ window.TAudio = (function () {
       case 'drum': taiko(t, 1, 68, sfxBus); taiko(t + .35, .7, 68, sfxBus); break;
     }
   }
-  return { setOn, isOn: () => on, play, sfx, unlock };
+  return { CREDITS, setOn, isOn: () => on, play, sfx, unlock };
 })();

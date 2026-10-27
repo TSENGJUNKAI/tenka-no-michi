@@ -327,7 +327,7 @@
               <span class="toggles"><button class="btn btn-sm btn-ghost" id="b-snd"></button><button class="btn btn-sm btn-ghost" id="b-anim"></button></span>
             </div>
             <p class="fine" id="anim-note"></p>
-            <p class="fine">史實說明依據通說整理；標註「傳說」「據說」者真偽未定。肉鴿模式中的武將會依真實年代登場與退場。<a href="#" id="b-credit">浮世繪圖片出處</a></p>
+            <p class="fine">史實說明依據通說整理；標註「傳說」「據說」者真偽未定。肉鴿模式中的武將會依真實年代登場與退場。<a href="#" id="b-credit">圖片與音樂出處</a></p>
           </div>
         </div>
         <div class="title-map"><svg id="tmap" role="img" aria-label="1560 年的日本勢力圖"></svg></div>
@@ -1566,7 +1566,8 @@
         const all = EVENTS.filter(e => META.seen.ev.includes(e.id));
         body = all.length ? `<div class="cgrid">${all.map(e => `<div class="centry"><h4>${esc(e.t)}</h4><p>${esc(e.hist)}</p></div>`).join('')}</div>` : '<p class="fine">還沒有遇到任何事件。</p>';
       } else if (tab === 'art') {
-        body = TUki.galleryHtml();
+        body = TUki.galleryHtml() + `<h3 class="uk-h">背景音樂</h3><p class="fine">音樂是開放授權（創用 CC）的錄音，為了讓遊戲載入快一點，重新壓縮成 96 kbps。關掉聲音再打開，或音檔載入失敗時，遊戲會改用即時合成的古箏與太鼓。</p>
+          <div class="cgrid">${TAudio.CREDITS.map(c => `<div class="centry"><h4>${esc(c.t)}　<small class="fine">${c.use}</small></h4><p>${esc(c.a)}・<a href="${c.url}" target="_blank" rel="noopener">${c.src} ↗</a></p><p>授權：<a href="https://creativecommons.org/licenses/by/${c.lic.slice(6)}/" target="_blank" rel="noopener">${c.lic}</a></p></div>`).join('')}</div>`;
       } else {
         const items = [];
         WORLD.forEach(w => items.push({ y: w.y, id: w.id, k: 'world', t: worldTitle(w) }));
@@ -1579,7 +1580,7 @@
       }
       screen().innerHTML = `<div class="page gutter"><div class="page-in">
         <div class="page-head"><h2>戰國圖鑑</h2><button class="btn btn-sm" id="c-back">← 返回</button></div>
-        <div class="ctabs">${[['gens', '武將'], ['treas', '名物'], ['syn', '羈絆'], ['ev', '事件'], ['geo', '地理'], ['tl', '年表'], ['art', '浮世繪']].map(([k, n]) => `<button class="${tab === k ? 'on' : ''}" data-t="${k}">${n}</button>`).join('')}</div>
+        <div class="ctabs">${[['gens', '武將'], ['treas', '名物'], ['syn', '羈絆'], ['ev', '事件'], ['geo', '地理'], ['tl', '年表'], ['art', '出處']].map(([k, n]) => `<button class="${tab === k ? 'on' : ''}" data-t="${k}">${n}</button>`).join('')}</div>
         ${body}</div></div>`;
       document.querySelectorAll('.ctabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; draw(); });
       $('#c-back').onclick = back;
